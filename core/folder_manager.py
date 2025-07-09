@@ -8,7 +8,6 @@ class FolderManager:
         
         list_folders = []
         path_root = filedialog.askdirectory(title='Seleccione el directorio raíz')
-        print(f"Directorio seleccionado: {path_root}")
         while path_root:
             list_folders.append(path_root)
             print(f"Directorio seleccionado: {path_root}")
