@@ -7,6 +7,8 @@ from pyproj import CRS, Transformer
 import cv2
 import shutil
 from core.image_processor import ImageHandler
+from core.metadata_manager import MetadataManager
+from core.geo_processor import GeoProcessor
 
 class SolarCorrector:
     def __init__(self, path_root: str, kml_path: str = None):
@@ -145,6 +147,9 @@ class SolarCorrector:
                     print(f"Error copiando archivos para {image_path}: {e}")
 
         self.list_flights = new_flights
+        
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
+        
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015):
         print(f"Detectando paneles en {self.path_PP}")
