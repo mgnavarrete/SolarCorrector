@@ -35,7 +35,7 @@ class SolarCorrector:
         
         self.panels_data = {}
         for image_path in self.list_images:
-            self.panels_data[image_path] = {"points":[], "geo_points":[]}
+            self.panels_data[image_path] = {"points":[], "geo_points":[], "isFlight":False, "area":0}
         
         if kml_path is not None:
             self.df = pd.read_csv(kml_path)
@@ -147,6 +147,7 @@ class SolarCorrector:
                 try:
                     shutil.copy(self.cvat_images_path + "/" + image_path, self.lines_images_path + "/" + image_path)
                     shutil.copy(self.metadata_path + "/" + image_path[:-4] + '.txt', self.metadata_lines_path + "/" + image_path[:-4] + '.txt')
+                    self.panels_data[image_path]["isFlight"] = True
                     
                 except FileNotFoundError as e:
                     print(f"Error: No se encontró el archivo {image_path} o su metadata")
@@ -267,6 +268,7 @@ class SolarCorrector:
 
                                             area = ImageHandler().get_area_polygon(points_ordered)
                                             self.list_areas.append(area)
+                                            self.panels_data[image_path]["area"] = area
                                             
                                             if area_min < area < area_max:
                                     
