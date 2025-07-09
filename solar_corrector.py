@@ -322,7 +322,7 @@ class SolarCorrector:
         self.panels_data[image_path]["polygons"] = polygons_list
         self.panels_data[image_path]["geo_polygons"] = geo_polygons_list
                     
-        print(f"Guardando datos en {self.panels_data}")
+        #print(f"Guardando datos en {self.panels_data}")
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
 
