@@ -56,7 +56,7 @@ class SolarCorrector:
     def save_geo_matrix(self):
         GeoProcessor().get_geoMatrix(self.list_images, self.metadata_path, self.geonp_path)
         
-    def findFlights(self, min_line: int = 4):
+    def findFlights(self, min_line: int = 4, save_kml: bool = False):
                 
         print(f"Buscando vuelos en {self.path_PP}")
         
@@ -155,7 +155,8 @@ class SolarCorrector:
 
         self.list_flights = new_flights
         
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
+        if save_kml:
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015):
