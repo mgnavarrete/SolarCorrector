@@ -1,5 +1,4 @@
 import os
-from ultralytics import YOLO
 from tqdm import tqdm
 import json
 import numpy as np
