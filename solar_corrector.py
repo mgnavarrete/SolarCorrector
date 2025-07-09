@@ -37,7 +37,7 @@ class SolarCorrector:
         
         self.panels_data = {}
         for image_path in self.list_images:
-            self.panels_data[image_path] = {"points":[], "geo_points":[], "isFlight":False, "area":0}
+            self.panels_data[image_path] = {"polygons":[], "geo_polygons":[], "isFlight":False, "area":0}
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
@@ -284,12 +284,8 @@ class SolarCorrector:
                                             self.panels_data[image_path]["area"] = area
                                             
                                                                                 
-                                            self.panels_data[image_path]["points"].append(points_ordered)
-                                            self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
-                                            
-                                                
-                                                
-                                        
+                                            self.panels_data[image_path]["polygons"].append(points_ordered)
+                                            self.panels_data[image_path]["geo_polygons"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
 
                                             if save_masks:
                                                 try:
@@ -316,6 +312,36 @@ class SolarCorrector:
         print(f"Paneles detectados: {len(self.panels_data)}")
         
     def correct_E(self):
+        
+        for flight in self.list_flights:
+            for e, image_path in enumerate(flight):
+                data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
+                W, H, _ = data_image.shape
+                
+                next_image_path = flight[e+1]
+                
+                polygons_image = self.panels_data[image_path]["polygons"]
+                polygons_next_image = self.panels_data[next_image_path]["polygons"]
+                
+                middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
+                middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
+                
+                draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, middle_polygon)
+                cv2.imwrite(f"{image_path[:-4]}_middle.png", draw_image)
+                                
+                geo_polygons_image = self.panels_data[image_path]["geo_polygons"]
+                geo_polygons_next_image = self.panels_data[next_image_path]["geo_polygons"]
+                
+                geo_middle_polygon = geo_polygons_image[e_middle_polygon]
+                geo_middle_polygon_next = geo_polygons_next_image[e_middle_polygon_next]
+                
+                
+                
+                
+                
+                
+                
+                
         
         
     

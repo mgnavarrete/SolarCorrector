@@ -207,3 +207,46 @@ class ImageHandler:
             print(f"Error inesperado en draw_segmented_image: {e}")
             return None
         
+    def find_middle_polygon(self, polygons: list[list[tuple[float, float]]], W: int, H: int):
+        try:
+            if not polygons:
+                raise ValueError("La lista de polígonos no puede estar vacía")
+            
+            # Calcular el centro de la imagen
+            image_center_x = W / 2
+            image_center_y = H / 2
+            
+            min_distance = float('inf')
+            middle_polygon = None
+            e_middle_polygon = None
+            
+            for e, polygon in enumerate(polygons):
+                if len(polygon) < 3:
+                    continue  # Saltar polígonos inválidos
+                
+                # Calcular el centroide del polígono
+                centroid = self.get_centroid(polygon)
+                if centroid[0] is None:
+                    continue  # Saltar si no se pudo calcular el centroide
+                
+                # Calcular la distancia euclidiana al centro de la imagen
+                distance = math.sqrt((centroid[0] - image_center_x)**2 + (centroid[1] - image_center_y)**2)
+                
+                # Actualizar si esta distancia es menor
+                if distance < min_distance:
+                    min_distance = distance
+                    middle_polygon = polygon
+                    e_middle_polygon = e
+            
+            if middle_polygon is None:
+                raise ValueError("No se encontró ningún polígono válido")
+            
+            return middle_polygon, e_middle_polygon
+            
+        except ValueError as e:
+            print(f"Error de valor en find_middle_polygon: {e}")
+            return None
+        except Exception as e:
+            print(f"Error inesperado en find_middle_polygon: {e}")
+            return None
+        
