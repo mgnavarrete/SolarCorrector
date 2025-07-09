@@ -160,7 +160,7 @@ class SolarCorrector:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
         
-    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015):
+    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 3000, area_max: float = 5000):
         print(f"Detectando paneles en {self.path_PP}")
         
         if self.list_flights == []:
@@ -265,26 +265,28 @@ class SolarCorrector:
                                             lon4, lat4 = self.transformer.transform(x4_utm, y4_utm)    
                                           
 
-                                        
-                                    
-                                            self.panels_data[image_path]["points"].append(points_ordered)
-                                            self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
-                                            
                                             area = ImageHandler().get_area_polygon(points_ordered)
                                             self.list_areas.append(area)
                                             
-                                      
+                                            if area_min < area < area_max:
+                                    
+                                                self.panels_data[image_path]["points"].append(points_ordered)
+                                                self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
+                                                
+                                                
+                                                
+                                        
 
-                                            if save_masks:
-                                                try:
-                                                    if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
-                                                        draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
-                                                    else:
-                                                        draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
-                                                        
-                                                    cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
-                                                except Exception as e:
-                                                    print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
+                                                if save_masks:
+                                                    try:
+                                                        if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
+                                                            draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
+                                                        else:
+                                                            draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
+                                                            
+                                                        cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
+                                                    except Exception as e:
+                                                        print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
                                     
                                 except Exception as e:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
