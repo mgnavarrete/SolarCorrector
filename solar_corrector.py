@@ -217,7 +217,12 @@ class SolarCorrector:
                                     
                                     if save_masks:
                                         try:
-                                            cv2.imwrite(f'{self.masks_path}/{image_path[:-4]}_{j}.png', mask)
+                                            if not os.path.exists(f"{self.masks_path}/{image_path}"):
+                                                cv2.imwrite(f'{self.masks_path}/{image_path}', mask)
+                                            else:
+                                                mask_saved = cv2.imread(f'{self.masks_path}/{image_path}')
+                                                mask_saved = cv2.add(mask_saved, mask)
+                                                cv2.imwrite(f'{self.masks_path}/{image_path}', mask_saved)
                                         except Exception as e:
                                             print(f"Error al guardar máscara para {image_path}: {e}")
                                             
@@ -309,6 +314,20 @@ class SolarCorrector:
             json.dump(self.panels_data, f)
         
         print(f"Paneles detectados: {len(self.panels_data)}")
+        
+    def correct_E(self):
+        
+        
+    
+        pass
+    
+    def correct_H(self):
+        pass
+    
+    def correct_yaw(self):
+        pass
+    
+ 
 
 
             
