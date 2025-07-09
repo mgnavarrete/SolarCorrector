@@ -161,7 +161,7 @@ class SolarCorrector:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
         
-    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 3500):
+    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
         print(f"Detectando paneles en {self.path_PP}")
         
         if self.list_flights == []:
