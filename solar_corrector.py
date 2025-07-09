@@ -270,7 +270,7 @@ class SolarCorrector:
                                             self.list_areas.append(area)
                                             self.panels_data[image_path]["area"] = area
                                             
-                                            if area_min < area < area_max:
+                                            if area_min >= area >= area_max:
                                     
                                                 self.panels_data[image_path]["points"].append(points_ordered)
                                                 self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
