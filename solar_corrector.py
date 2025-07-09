@@ -225,18 +225,14 @@ class SolarCorrector:
                                         if len(approx_polygon) > 3:
                                             
                                       
-                                            x, y, w, h = cv2.boundingRect(largest_contour)
-                                            x = max(0, min(x, W - 1))
-                                            y = max(0, min(y, H - 1))
-                                            w = max(0, min(w, W - x))
-                                            h = max(0, min(h, H - y))
-                                            
-                                            approx_polygon = np.array([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], dtype=int)
-
-                                            x1, y1 = max(0, min(approx_polygon[0][0], W - 1)), max(0, min(approx_polygon[0][1], H - 1))
-                                            x2, y2 = max(0, min(approx_polygon[1][0], W - 1)), max(0, min(approx_polygon[1][1], H - 1))
-                                            x3, y3 = max(0, min(approx_polygon[2][0], W - 1)), max(0, min(approx_polygon[2][0], H - 1))
-                                            x4, y4 = max(0, min(approx_polygon[3][0], W - 1)), max(0, min(approx_polygon[3][0], H - 1))
+                                            x1 = approx_polygon[0][0][0]
+                                            y1 = approx_polygon[0][0][1]
+                                            x2 = approx_polygon[1][0][0]
+                                            y2 = approx_polygon[1][0][1]
+                                            x3 = approx_polygon[2][0][0]
+                                            y3 = approx_polygon[2][0][1]
+                                            x4 = approx_polygon[3][0][0]
+                                            y4 = approx_polygon[3][0][1]
 
 
                                             points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
