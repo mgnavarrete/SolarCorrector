@@ -50,7 +50,11 @@ class SolarCorrector:
         os.makedirs(self.masks_path, exist_ok=True)    
         os.makedirs(self.segmented_images_path, exist_ok=True)
         
+    def save_geo_matrix(self):
+        GeoProcessor().get_geoMatrix(self.list_images, self.metadata_path, self.geonp_path)
+        
     def findFlights(self, min_line: int = 4):
+                
         print(f"Buscando vuelos en {self.path_PP}")
         
         # min_line: minimo de imagenes por vuelo, si no hay suficientes, se elimina el vuelo y las imagenes, si es 0 no se elimina nada.
