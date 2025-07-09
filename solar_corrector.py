@@ -268,24 +268,6 @@ class SolarCorrector:
                                             lon4, lat4 = self.transformer.transform(x4_utm, y4_utm)    
                                           
 
-                                            x1 = approx_polygon[0][0][0]
-                                            y1 = approx_polygon[0][0][1]
-                                            x2 = approx_polygon[1][0][0]
-                                            y2 = approx_polygon[1][0][1]
-                                            x3 = approx_polygon[2][0][0]
-                                            y3 = approx_polygon[2][0][1]
-                                            x4 = approx_polygon[3][0][0]
-                                            y4 = approx_polygon[3][0][1]
-
-                                           
-                                            points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-                                            points_ordered = ImageHandler().order_points(points)
-                                            print(points_ordered)
-                                            
-                                            x1, y1 = points_ordered[0]
-                                            x2, y2 = points_ordered[1]
-                                            x3, y3 = points_ordered[2]
-                                            x4, y4 = points_ordered[3]
                                             print(x1, y1, x2, y2, x3, y3, x4, y4)
                                             
                                             print("ENTRO A GUARDAR JSON")
