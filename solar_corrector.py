@@ -31,6 +31,7 @@ class SolarCorrector:
         self.transformer = Transformer.from_crs(self.utm_crs, self.latlon_crs, always_xy=True)
         self.masks_path = os.path.join(self.path_PP, 'masks')
         self.segmented_images_path = os.path.join(self.path_PP, 'segmented_images')
+        self.list_areas = []
         
         self.panels_data = {}
         for image_path in self.list_images:
@@ -268,6 +269,10 @@ class SolarCorrector:
                                     
                                             self.panels_data[image_path]["points"].append(points_ordered)
                                             self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
+                                            
+                                            area = ImageHandler().get_area_polygon(points_ordered)
+                                            self.list_areas.append(area)
+                                            
                                       
 
                                             if save_masks:
