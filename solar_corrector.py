@@ -229,6 +229,7 @@ class SolarCorrector:
                                                 cv2.imwrite(f'{self.masks_path}/{image_path}', mask)
                                             else:
                                                 mask_saved = cv2.imread(f'{self.masks_path}/{image_path}')
+                                                mask_saved = cv2.resize(mask_saved, (W, H))
                                                 mask_total  = mask_saved + mask
                                                 cv2.imwrite(f'{self.masks_path}/{image_path}', mask_total)
                                         except Exception as e:
