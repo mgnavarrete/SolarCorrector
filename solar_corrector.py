@@ -229,8 +229,10 @@ class SolarCorrector:
                                                 cv2.imwrite(f'{self.masks_path}/{image_path}', mask)
                                             else:
                                                 mask_saved = cv2.imread(f'{self.masks_path}/{image_path}')
-                                                mask_saved = cv2.resize(mask_saved, (W, H))
+                                                # pasar de (W,H,3) a (W,H)
+                                                mask_saved = cv2.cvtColor(mask_saved, cv2.COLOR_BGR2GRAY)
                                                 mask_total  = mask_saved + mask
+                              
                                                 cv2.imwrite(f'{self.masks_path}/{image_path}', mask_total)
                                         except Exception as e:
                                             print(f"Error al guardar máscara para {image_path}: {e}")
