@@ -314,15 +314,18 @@ class SolarCorrector:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
                                     continue
                     
-                    self.panels_data[image_path]["polygons"] = polygons_list
-                    self.panels_data[image_path]["geo_polygons"] = geo_polygons_list
                     
-                    with open(self.json_path, 'w') as f:
-                        json.dump(self.panels_data, f)
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
         
+        self.panels_data[image_path]["polygons"] = polygons_list
+        self.panels_data[image_path]["geo_polygons"] = geo_polygons_list
+                    
+        print(f"Guardando datos en {self.json_path}")
+        with open(self.json_path, 'w') as f:
+            json.dump(self.panels_data, f)
+
     
         
         print(f"Paneles detectados: {len(self.panels_data)}")
