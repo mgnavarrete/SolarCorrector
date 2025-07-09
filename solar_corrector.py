@@ -276,8 +276,12 @@ class SolarCorrector:
 
                                             if save_masks:
                                                 try:
-                                                    draw_image = ImageHandler().draw_segmented_image(data_image, points_ordered)
-                                                    cv2.imwrite(f"{self.segmented_images_path}/{image_path[:-4]}.png", draw_image)
+                                                    if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
+                                                        draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
+                                                    else:
+                                                        draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
+                                                        
+                                                    cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
                                                 except Exception as e:
                                                     print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
                                     

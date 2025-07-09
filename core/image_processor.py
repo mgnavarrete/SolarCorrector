@@ -185,15 +185,11 @@ class ImageHandler:
             print(f"Error inesperado en order_points: {e}")
             return None
     
-    def draw_segmented_image(self, data_image: np.ndarray, points: list[tuple[float, float]]):
+    def draw_segmented_image(self, segmented_images_path: str, image_path: str, points: list[tuple[float, float]]):
         try:
-            if data_image is None:
-                raise ValueError("La imagen de datos no puede ser None")
             
-            if not points or len(points) != 4:
-                raise ValueError("Se necesitan exactamente 4 puntos para dibujar la segmentación")
             
-            data_image_copy = data_image.copy()
+            data_image_copy = cv2.imread(f"{segmented_images_path}/{image_path}")
             points_np = np.array(points, np.int32)
             points_np = points_np.reshape((-1, 1, 2))
             cv2.polylines(data_image_copy, [points_np], isClosed=True, color=(0, 255, 0), thickness=3)
