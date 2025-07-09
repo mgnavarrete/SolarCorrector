@@ -9,6 +9,7 @@ import shutil
 from core.image_processor import ImageHandler
 from core.metadata_manager import MetadataManager
 from core.geo_processor import GeoProcessor
+import json
 
 class SolarCorrector:
     def __init__(self, path_root: str, kml_path: str = None):
@@ -32,10 +33,14 @@ class SolarCorrector:
         self.masks_path = os.path.join(self.path_PP, 'masks')
         self.segmented_images_path = os.path.join(self.path_PP, 'segmented_images')
         self.list_areas = []
+        self.json_path = os.path.join(self.path_PP, 'corrector_data.json')
         
         self.panels_data = {}
         for image_path in self.list_images:
             self.panels_data[image_path] = {"points":[], "geo_points":[], "isFlight":False, "area":0}
+        
+        with open(self.json_path, 'w') as f:
+            json.dump(self.panels_data, f)
         
         if kml_path is not None:
             self.df = pd.read_csv(kml_path)
@@ -160,6 +165,9 @@ class SolarCorrector:
         if save_kml:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
+        with open(self.json_path, 'w') as f:
+            json.dump(self.panels_data, f)
+        
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
         print(f"Detectando paneles en {self.path_PP}")
@@ -270,25 +278,24 @@ class SolarCorrector:
                                             self.list_areas.append(area)
                                             self.panels_data[image_path]["area"] = area
                                             
-                                            if area >= area_min:
-                                    
-                                                self.panels_data[image_path]["points"].append(points_ordered)
-                                                self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
-                                                
+                                                                                
+                                            self.panels_data[image_path]["points"].append(points_ordered)
+                                            self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
+                                            
                                                 
                                                 
                                         
 
-                                                if save_masks:
-                                                    try:
-                                                        if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
-                                                            draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
-                                                        else:
-                                                            draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
-                                                            
-                                                        cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
-                                                    except Exception as e:
-                                                        print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
+                                            if save_masks:
+                                                try:
+                                                    if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
+                                                        draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
+                                                    else:
+                                                        draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
+                                                        
+                                                    cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
+                                                except Exception as e:
+                                                    print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
                                     
                                 except Exception as e:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
@@ -297,6 +304,10 @@ class SolarCorrector:
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
+        
+        with open(self.json_path, 'w') as f:
+            json.dump(self.panels_data, f)
+        
         print(f"Paneles detectados: {len(self.panels_data)}")
 
 
