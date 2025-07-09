@@ -222,6 +222,8 @@ class SolarCorrector:
 
                                     
                                         if len(approx_polygon) > 3:
+                                            
+                                            print("ENTRO A APROXIMACION")
 
                                             x, y, w, h = cv2.boundingRect(largest_contour)
                                             x = max(0, min(x, W - 1))
@@ -272,15 +274,19 @@ class SolarCorrector:
                                             x4 = approx_polygon[3][0][0]
                                             y4 = approx_polygon[3][0][1]
 
+                                            print("ENTRO A ORDER POINTS")
                                             points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
                                             points_ordered = ImageHandler().order_points(points)
+                                            print("SALIO A ORDER POINTS")
                                             x1, y1 = points_ordered[0]
                                             x2, y2 = points_ordered[1]
                                             x3, y3 = points_ordered[2]
                                             x4, y4 = points_ordered[3]
 
+                                            print("ENTRO A GUARDAR JSON")
                                             self.panels_data[image_path]["points"].append(points_ordered)
                                             self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
+                                            print("SALIO A GUARDAR JSON")
 
                                             if save_masks:
                                                 try:
