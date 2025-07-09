@@ -295,7 +295,7 @@ class SolarCorrector:
                                             self.panels_data[image_path]["area"] = float(area)
                                             
 
-                                            polygons_list.append(points_ordered)
+                                            polygons_list.append([(int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)), (int(x4), int(y4))])
                                             geo_polygons_list.append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
 
                                             if save_masks:
