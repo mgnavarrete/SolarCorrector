@@ -172,7 +172,8 @@ class SolarCorrector:
         if save_kml:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
-     
+        with open(self.json_path, 'w') as f:
+            json.dump(self.panels_data, f)
         
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
@@ -206,7 +207,8 @@ class SolarCorrector:
                         print(f"Error en la detección YOLO para {image_path}: {e}")
                         continue
 
-                        
+                    polygons_list = []
+                    geo_polygons_list = []
                     for result in results:
                         if result.masks is not None:
                             for j, mask in enumerate(result.masks.data):
@@ -290,11 +292,11 @@ class SolarCorrector:
 
                                             area = ImageHandler().get_area_polygon(points_ordered)
                                             self.list_areas.append(area)
-                                            self.panels_data[image_path]["area"] = area
+                                            self.panels_data[image_path]["area"] = float(area)
                                             
-                                                                                
-                                            self.panels_data[image_path]["polygons"].append(points_ordered)
-                                            self.panels_data[image_path]["geo_polygons"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
+
+                                            polygons_list.append(points_ordered)
+                                            geo_polygons_list.append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
 
                                             if save_masks:
                                                 try:
@@ -306,11 +308,17 @@ class SolarCorrector:
                                                     cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
                                                 except Exception as e:
                                                     print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
+                                            
                                     
                                 except Exception as e:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
                                     continue
-                                    
+                    
+                    self.panels_data[image_path]["polygons"] = polygons_list
+                    self.panels_data[image_path]["geo_polygons"] = geo_polygons_list
+                    
+                    with open(self.json_path, 'w') as f:
+                        json.dump(self.panels_data, f)
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
@@ -342,8 +350,7 @@ class SolarCorrector:
                 middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
                 
                 draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, middle_polygon)
-                cv2.imwrite(f"{image_path[:-4]}_middle.png", draw_image)
-                                
+                           
                 geo_polygons_image = self.panels_data[image_path]["geo_polygons"]
                 geo_polygons_next_image = self.panels_data[next_image_path]["geo_polygons"]
                 
