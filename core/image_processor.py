@@ -158,7 +158,7 @@ class ImageHandler:
             print(f"Error inesperado en order_points_dis: {e}")
             return None
 
-    def order_points(self, points: list[tuple[float, float]]):
+    def order_points(self, points):
         try:
             if not points or len(points) != 4:
                 raise ValueError("Se necesitan exactamente 4 puntos para ordenar")
