@@ -164,18 +164,19 @@ class ImageHandler:
                 raise ValueError("Se necesitan exactamente 4 puntos para ordenar")
             
             print("ENTRO A ORDER POINTS")
-            
+            print(points)
             # Ordenar los puntos basándose en su coordenada x
             points = sorted(points, key=lambda point: point[0])
-
+            print("SALIO A ORDER POINTS")
             # Separar los puntos en dos grupos basados en su posición x
             left_points = points[:2]
             right_points = points[2:]
 
+            print("ENTRO A ORDER POINTS 2")
             # Dentro de cada grupo, ordenarlos por su coordenada y
             left_points = sorted(left_points, key=lambda point: point[1])
             right_points = sorted(right_points, key=lambda point: point[1], reverse=True)
-
+            print("SALIO A ORDER POINTS 2")
             # El orden final es: superior izquierdo, inferior izquierdo, inferior derecho, superior derecho
             return [left_points[0], left_points[1], right_points[0], right_points[1]]
         except ValueError as e:
