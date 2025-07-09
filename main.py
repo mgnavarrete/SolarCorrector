@@ -1,9 +1,9 @@
 from solar_corrector import SolarCorrector
-from core.file_manager import FileManager
+from core.folder_manager import FolderManager
 
 if __name__ == "__main__":
 
-    folders_list = FileManager().select_directories()
+    folders_list = FolderManager.select_directories()
     
     for folder in folders_list:
         SC = SolarCorrector(folder)
