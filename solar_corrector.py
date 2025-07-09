@@ -161,7 +161,7 @@ class SolarCorrector:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
         
-    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 3000, area_max: float = 5000):
+    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 3500):
         print(f"Detectando paneles en {self.path_PP}")
         
         if self.list_flights == []:
@@ -270,7 +270,7 @@ class SolarCorrector:
                                             self.list_areas.append(area)
                                             self.panels_data[image_path]["area"] = area
                                             
-                                            if area_min >= area >= area_max:
+                                            if area >= area_min:
                                     
                                                 self.panels_data[image_path]["points"].append(points_ordered)
                                                 self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
