@@ -368,3 +368,4 @@ class GeoProcessor:
             print(f"Error de permisos al crear KML: {e}")
         except Exception as e:
             print(f"Error general en save_kml_vuelos: {e}")
+            

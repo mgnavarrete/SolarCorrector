@@ -11,6 +11,7 @@ from core.metadata_manager import MetadataManager
 from core.geo_processor import GeoProcessor
 import json
 
+
 class SolarCorrector:
     def __init__(self, path_root: str, kml_path: str = None):
         
@@ -38,9 +39,7 @@ class SolarCorrector:
         self.panels_data = {}
         for image_path in self.list_images:
             self.panels_data[image_path] = {"polygons":[], "geo_polygons":[], "isFlight":False, "area":0}
-        
-        with open(self.json_path, 'w') as f:
-            json.dump(self.panels_data, f)
+    
         
         if kml_path is not None:
             self.df = pd.read_csv(kml_path)
@@ -173,8 +172,7 @@ class SolarCorrector:
         if save_kml:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
         
-        with open(self.json_path, 'w') as f:
-            json.dump(self.panels_data, f)
+     
         
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
@@ -317,8 +315,7 @@ class SolarCorrector:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
         
-        with open(self.json_path, 'w') as f:
-            json.dump(self.panels_data, f)
+    
         
         print(f"Paneles detectados: {len(self.panels_data)}")
         
@@ -329,7 +326,7 @@ class SolarCorrector:
         
         else:
             print(f"leyendo datos de {self.json_path}")
-            self.init_from_json()
+            # self.init_from_json()
         
         for flight in self.list_flights:
             for e, image_path in enumerate(flight):
