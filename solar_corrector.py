@@ -268,12 +268,11 @@ class SolarCorrector:
                                             lon4, lat4 = self.transformer.transform(x4_utm, y4_utm)    
                                           
 
-                                            print(x1, y1, x2, y2, x3, y3, x4, y4)
-                                            
-                                            print("ENTRO A GUARDAR JSON")
+                                        
+                                    
                                             self.panels_data[image_path]["points"].append(points_ordered)
                                             self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
-                                            print("SALIO A GUARDAR JSON")
+                                      
 
                                             if save_masks:
                                                 try:
