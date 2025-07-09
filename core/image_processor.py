@@ -163,6 +163,8 @@ class ImageHandler:
             if not points or len(points) != 4:
                 raise ValueError("Se necesitan exactamente 4 puntos para ordenar")
             
+            print("ENTRO A ORDER POINTS")
+            
             # Ordenar los puntos basándose en su coordenada x
             points = sorted(points, key=lambda point: point[0])
 
