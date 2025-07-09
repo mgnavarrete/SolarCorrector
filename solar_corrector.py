@@ -334,7 +334,7 @@ class SolarCorrector:
         
         else:
             print(f"leyendo datos de {self.json_path}")
-            # self.init_from_json()
+            self.init_from_json()
         
         for flight in self.list_flights:
             for e, image_path in enumerate(flight):
