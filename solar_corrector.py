@@ -261,13 +261,13 @@ class SolarCorrector:
                                             x3_utm, y3_utm = geo_data[y3][x3][0], geo_data[y3][x3][1]
                                             x4_utm, y4_utm = geo_data[y4][x4][0], geo_data[y4][x4][1]
                                            
-                                            print("ENTRO A TRANSFORMAR")
+                                       
                                             lon1, lat1 = self.transformer.transform(x1_utm, y1_utm)
                                             lon2, lat2 = self.transformer.transform(x2_utm, y2_utm)
                                             lon3, lat3 = self.transformer.transform(x3_utm, y3_utm)
                                             lon4, lat4 = self.transformer.transform(x4_utm, y4_utm)    
-                                            print("SALIO A TRANSFORMAR")
-                                            
+                                          
+
                                             x1 = approx_polygon[0][0][0]
                                             y1 = approx_polygon[0][0][1]
                                             x2 = approx_polygon[1][0][0]
@@ -280,12 +280,14 @@ class SolarCorrector:
                                            
                                             points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
                                             points_ordered = ImageHandler().order_points(points)
+                                            print(points_ordered)
                                             
                                             x1, y1 = points_ordered[0]
                                             x2, y2 = points_ordered[1]
                                             x3, y3 = points_ordered[2]
                                             x4, y4 = points_ordered[3]
-
+                                            print(x1, y1, x2, y2, x3, y3, x4, y4)
+                                            
                                             print("ENTRO A GUARDAR JSON")
                                             self.panels_data[image_path]["points"].append(points_ordered)
                                             self.panels_data[image_path]["geo_points"].append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])

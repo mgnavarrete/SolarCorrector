@@ -175,8 +175,7 @@ class ImageHandler:
             # Dentro de cada grupo, ordenarlos por su coordenada y
             left_points = sorted(left_points, key=lambda point: point[1])
             right_points = sorted(right_points, key=lambda point: point[1], reverse=True)
-            print(left_points)
-            print(right_points)
+        
             # El orden final es: superior izquierdo, inferior izquierdo, inferior derecho, superior derecho
             return [left_points[0], left_points[1], right_points[0], right_points[1]]
         except ValueError as e:
