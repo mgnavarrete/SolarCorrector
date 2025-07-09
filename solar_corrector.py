@@ -167,8 +167,8 @@ class SolarCorrector:
         if self.list_flights == []:
             print("No hay vuelos para procesar")
             return
-        for flight in self.list_flights:
-            for image_path in tqdm(flight, desc="Detectando paneles"):
+        for flight in tqdm(self.list_flights, desc="Detectando paneles"):
+            for image_path in flight:
                 try:
                     # Cargar datos de la imagen con control de errores
                     try:
