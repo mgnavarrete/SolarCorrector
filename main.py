@@ -12,7 +12,7 @@ if __name__ == "__main__":
         SC = SolarCorrector(folder)
         #SC.reset_metadata(var='all')    
         #SC.save_geo_matrix()
-        SC.findFlights(4, save_kml=False)
-        SC.get_seg_paneles(save_masks=True)
+        #SC.findFlights(4, save_kml=False)
+        #SC.get_seg_paneles(save_masks=True)
         SC.correct_E()
       

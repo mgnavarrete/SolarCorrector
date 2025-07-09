@@ -56,6 +56,14 @@ class SolarCorrector:
         os.makedirs(self.masks_path, exist_ok=True)    
         os.makedirs(self.segmented_images_path, exist_ok=True)
         
+    def init_from_json(self):
+        with open(self.json_path, 'r') as f:
+            self.panels_data = json.load(f)
+            self.list_flights = [(key, flight) for key, flight in self.panels_data.items() if flight["isFlight"]]
+            self.list_areas = [area for area in self.panels_data.values() if area["area"]]
+            print(f"Vuelos leidos: {self.list_flights[0]}")
+        print(f"Datos cargados de {self.json_path}")
+        
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
         
@@ -312,6 +320,13 @@ class SolarCorrector:
         print(f"Paneles detectados: {len(self.panels_data)}")
         
     def correct_E(self):
+        
+        if self.list_flights == []:
+            print("No hay vuelos para procesar")
+        
+        else:
+            print(f"leyendo datos de {self.json_path}")
+            self.init_from_json()
         
         for flight in self.list_flights:
             for e, image_path in enumerate(flight):
