@@ -50,6 +50,9 @@ class SolarCorrector:
         os.makedirs(self.masks_path, exist_ok=True)    
         os.makedirs(self.segmented_images_path, exist_ok=True)
         
+    def reset_metadata(self, var: str = 'all'):
+        MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
+        
     def save_geo_matrix(self):
         GeoProcessor().get_geoMatrix(self.list_images, self.metadata_path, self.geonp_path)
         
