@@ -8,7 +8,7 @@ import utm
 class GeoProcessor:
 
     
-    def get_geoMatrix(self, list_images, metadata_path, geonp_path):
+    def save_georef_matriz(self, list_images, metadata_path, geonp_path):
         # Genera las matrices georeferenciadas de las imágenes
         try:
             for image_path in tqdm(list_images, desc="Generando Matrices Georeferenciadas de las imágenes"):
@@ -22,7 +22,7 @@ class GeoProcessor:
                     with open(metadata_file, 'r') as archivo:
                         data = json.load(archivo)
                         
-                    m = self.save_georef_matriz(data, data['offset_E_tot'], data['offset_N_tot'], data['offset_yaw'], data['offset_altura'])
+                    m = self.get_georef_matriz(data, data['offset_E_tot'], data['offset_N_tot'], data['offset_yaw'], data['offset_altura'])
                     if m is not None:
                         geo_name = f'{geonp_path}/{image_path[:-4]}.npy'
                         np.save(geo_name, m)
@@ -103,7 +103,7 @@ class GeoProcessor:
             print(f"Error obteniendo posición UTM: {e}")
             return None
 
-    def save_georef_matriz(self, data, desp_este=0, desp_norte=0, desp_yaw=0, offset_altura=0, modo_altura="relativo", dist=None, ans=None, sig=None):
+    def get_georef_matriz(self, data, desp_este=0, desp_norte=0, desp_yaw=0, offset_altura=0, modo_altura="relativo", dist=None, ans=None, sig=None):
         try:
             metadata = data
             if metadata['Model'] == "MAVIC2-ENTERPRISE-ADVANCED":
@@ -305,7 +305,7 @@ class GeoProcessor:
                                     data2 = json.load(metadata_file)
 
                                 modo_altura = data2['modo_altura']
-                                m = self.save_georef_matriz(data2, data2['offset_E_tot'], data2['offset_N_tot'], data2['offset_yaw'], data2['offset_altura'], modo_altura)
+                                m = self.get_georef_matriz(data2, data2['offset_E_tot'], data2['offset_N_tot'], data2['offset_yaw'], data2['offset_altura'], modo_altura)
                                 
                                 if m is None:
                                     print(f"Error: No se pudo generar matriz para {nombre}")
@@ -368,4 +368,31 @@ class GeoProcessor:
             print(f"Error de permisos al crear KML: {e}")
         except Exception as e:
             print(f"Error general en save_kml_vuelos: {e}")
+            
+    
+    def rotate_point(self, pt, centro, ang):
+        c, s = np.cos(ang), np.sin(ang)
+        R = np.array([[c, -s], [s, c]])
+        return R @ (pt - centro) + centro
+        
+    def aling_line(self, P1, P2, Q1, Q2):
+        
+
+        # === 2. Calcula los vectores y ángulos de ambas líneas ===
+
+        vec_img1 = P2 - P1
+        angle_img1 = np.arctan2(vec_img1[1], vec_img1[0])
+
+        vec_img2 = Q2 - Q1
+        angle_img2 = np.arctan2(vec_img2[1], vec_img2[0])
+        delta_yaw = angle_img1 - angle_img2
+
+        offset = P2 - Q1
+        desp_este = offset[0]
+        desp_norte = offset[1]
+        desp_yaw = np.degrees(delta_yaw)
+        
+        return desp_este, desp_norte, desp_yaw
+
+
             

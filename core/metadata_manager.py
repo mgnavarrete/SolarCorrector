@@ -10,8 +10,8 @@ class MetadataManager:
         # var: all, E, yaw, H
         # all: resetea todos los metadatos
         
-        if var not in ['all', 'E', 'yaw', 'H']:
-            raise ValueError(f"El parámetro {var} no es válido, los parámetros válidos son: all, E, yaw, H")
+        if var not in ['all', 'E', 'yaw', 'H', 'N']:
+            raise ValueError(f"El parámetro {var} no es válido, los parámetros válidos son: all, E, yaw, H, N")
         
         else:
             for image_path in tqdm(list_images, desc="Reset Metadata:"):
@@ -31,6 +31,8 @@ class MetadataManager:
                         data['offset_altura'] = 0
                         data['offset_E_tot'] = 0
                         data['offset_yaw'] = 0
+                        data['offset_N'] = 0
+                        data['offset_N_tot'] = 0
                         
                     elif var == 'E':
                         data['offset_E'] = 0
@@ -41,6 +43,10 @@ class MetadataManager:
                         
                     elif var == 'H':
                         data['offset_altura'] = 0
+                        
+                    elif var == 'N':
+                        data['offset_N'] = 0
+                        data['offset_N_tot'] = 0
                         
                     with open(metadata_file, 'w') as f:
                         json.dump(data, f, indent=4)
@@ -54,12 +60,12 @@ class MetadataManager:
                 except Exception as e:
                     print(f"Error inesperado al procesar {image_path}: {e}")
                 
-    def adjust_metadata(self, list_images, metadata_path, param: str, value: float):
+    def adjust_all_metadata(self, list_images, metadata_path, param: str, value: float):
         # Ajusta los metadatos de las imágenes
         # param: offset_E, offset_altura, offset_yaw
         # value: float
         
-        if param not in ['offset_E', 'offset_altura', 'offset_yaw']:
+        if param not in ['offset_E', 'offset_altura', 'offset_yaw', 'offset_N']:
             raise ValueError(f"El parámetro {param} no es válido, los parámetros válidos son: offset_E, offset_altura, offset_yaw")
         
         
@@ -80,6 +86,10 @@ class MetadataManager:
                     if param == 'offset_E': 
                         data['offset_E_tot'] = value  
                         
+                    elif param == 'offset_N':
+                        data['offset_N'] = value
+                        data['offset_N_tot'] = value
+                        
                     with open(metadata_file, 'w') as f:
                         json.dump(data, f, indent=4)
                         
@@ -93,7 +103,41 @@ class MetadataManager:
                     print(f"Error: Clave no encontrada en el archivo {metadata_file}: {e}")
                 except Exception as e:
                     print(f"Error inesperado al procesar {image_path}: {e}")
-        
+                    
+    def adjust_metadata(self, metadata_file, param: str, value: float):
+
+        try:
+         
+            
+            if not os.path.exists(metadata_file):
+                print(f"Advertencia: Archivo de metadatos no encontrado: {metadata_file}")
+                return
+                
+            with open(metadata_file, 'r') as archivo:
+                data = json.load(archivo)
+                
+            data[param] = value
+            
+            if param == 'offset_E': 
+                data['offset_E_tot'] = value  
+                
+            elif param == 'offset_N':
+
+                data['offset_N_tot'] = value
+                
+            with open(metadata_file, 'w') as f:
+                json.dump(data, f, indent=4)
+                
+        except FileNotFoundError:
+            print(f"Error: No se pudo encontrar el archivo de metadatos: {metadata_file}")
+        except json.JSONDecodeError as e:
+            print(f"Error: JSON inválido en el archivo {metadata_file}: {e}")
+        except PermissionError:
+            print(f"Error: No hay permisos para acceder al archivo: {metadata_file}")
+        except KeyError as e:
+            print(f"Error: Clave no encontrada en el archivo {metadata_file}: {e}")
+
+
     def get_metadata(self, image_path):
         # Carga la metadata de la imagen
         try:

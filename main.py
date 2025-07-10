@@ -10,9 +10,9 @@ if __name__ == "__main__":
     
     for folder in folders_list:
         SC = SolarCorrector(folder)
-        # SC.reset_metadata(var='all')    
+        SC.reset_metadata(var='all')    
         # SC.save_geo_matrix()
         SC.findFlights(4, save_kml=False)
         SC.get_seg_paneles(save_masks=False)
-        # SC.correct_E()
+        SC.correct_lines()
       

@@ -10,7 +10,7 @@ from core.image_processor import ImageHandler
 from core.metadata_manager import MetadataManager
 from core.geo_processor import GeoProcessor
 import json
-
+from scipy.optimize import minimize
 
 class SolarCorrector:
     def __init__(self, path_root: str, kml_path: str = None):
@@ -23,7 +23,7 @@ class SolarCorrector:
         self.metadata_lines_path = os.path.join(self.path_PP, 'metadata_lines')     # Path de los archivos JSON de metadatos de las lineas
         self.geonp_path = os.path.join(self.path_PP, 'georef_numpy')                # Path de los archivos numpy georeferenciados
         self.metadata_path = os.path.join(self.path_PP, 'metadata')                 # Path de los archivos JSON de metadatos
-        self.model = YOLO('utils\PANEL-SEG-v1.pt')                                  # Modelo de YOLO
+        self.model = YOLO('utils/PANEL-SEG-v1.pt')                                  # Modelo de YOLO
         self.list_images = os.listdir(self.cvat_images_path)                        # Lista de imágenes cvat
         self.list_flights = []
         self.zone_number = 19
@@ -58,16 +58,20 @@ class SolarCorrector:
     def init_from_json(self):
         with open(self.json_path, 'r') as f:
             self.panels_data = json.load(f)
-            self.list_flights = [(key, flight) for key, flight in self.panels_data.items() if flight["isFlight"]]
-            self.list_areas = [area for area in self.panels_data.values() if area["area"]]
-            print(f"Vuelos leidos: {self.list_flights[0]}")
+        
+        # Cargar la lista de vuelos desde JSON
+        with open(f"{self.path_PP}/list_flights.json", 'r') as f:
+            self.list_flights = json.load(f)
+                 
+        self.list_areas = [area for area in self.panels_data.values() if area["area"]]
+        print(f"Vuelos leidos: {self.list_flights[0]}")
         print(f"Datos cargados de {self.json_path}")
         
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
         
     def save_geo_matrix(self):
-        GeoProcessor().get_geoMatrix(self.list_images, self.metadata_path, self.geonp_path)
+        GeoProcessor().save_georef_matriz(self.list_images, self.metadata_path, self.geonp_path)
         
     def findFlights(self, min_line: int = 4, save_kml: bool = False):
                 
@@ -96,7 +100,9 @@ class SolarCorrector:
                 
                 # Cargar datos geográficos con control de errores
                 try:
-                    geo_data = np.load(f"{self.geonp_path}/{image_path[:-4]}.npy")
+                    metadata = MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt")
+                    geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
+                    
                 except FileNotFoundError:
                     print(f"Error: No se encontró la matrix de georeferenciada para {image_path}")
                     continue
@@ -147,9 +153,9 @@ class SolarCorrector:
                         
 
         new_flights = flights_list.copy()
-        # for vuelo in vueloList:
-        if len(flights_list) < min_line:
-            new_flights.remove(flights_list)
+        for line in new_flights:
+            if len(line) < min_line:
+                new_flights.remove(line)
         
         print("Numero de vuelos: ", len(new_flights))
 
@@ -174,6 +180,10 @@ class SolarCorrector:
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
+            
+        # guardar como lista usando JSON (mejor para listas de listas con strings)
+        with open(f"{self.path_PP}/list_flights.json", 'w') as f:
+            json.dump(self.list_flights, f)
         
         
     def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
@@ -208,7 +218,7 @@ class SolarCorrector:
                         continue
 
                     polygons_list = []
-                    geo_polygons_list = []
+      
                     for result in results:
                         if result.masks is not None:
                             for j, mask in enumerate(result.masks.data):
@@ -268,36 +278,13 @@ class SolarCorrector:
                                             x2, y2 = points_ordered[1]
                                             x3, y3 = points_ordered[2]
                                             x4, y4 = points_ordered[3]
-                                            
-                                            try:
-                                                geo_data = np.load(f"{self.geonp_path}/{image_path[:-4]}.npy")
-                                            except FileNotFoundError:
-                                                print(f"Error: No se encontró la matrix de georeferenciada para {image_path}")
-                                                continue
-                                            except Exception as e:
-                                                print(f"Error al cargar la matrix de georeferenciada para {image_path}: {e}")
-                                                continue
-
-                                            x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
-                                            x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
-                                            x3_utm, y3_utm = geo_data[y3][x3][0], geo_data[y3][x3][1]
-                                            x4_utm, y4_utm = geo_data[y4][x4][0], geo_data[y4][x4][1]
-                                           
-                                       
-                                            lon1, lat1 = self.transformer.transform(x1_utm, y1_utm)
-                                            lon2, lat2 = self.transformer.transform(x2_utm, y2_utm)
-                                            lon3, lat3 = self.transformer.transform(x3_utm, y3_utm)
-                                            lon4, lat4 = self.transformer.transform(x4_utm, y4_utm)    
                                           
 
                                             area = ImageHandler().get_area_polygon(points_ordered)
                                             self.list_areas.append(area)
                                             self.panels_data[image_path]["area"] = float(area)
-                                            
-
                                             polygons_list.append([(int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)), (int(x4), int(y4))])
-                                            geo_polygons_list.append([(lon1, lat1), (lon2, lat2), (lon3, lat3), (lon4, lat4)])
-
+                                            
                                             if save_masks:
                                                 try:
                                                     if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
@@ -313,16 +300,16 @@ class SolarCorrector:
                                 except Exception as e:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
                                     continue
-                    
+                    self.panels_data[image_path]["polygons"] = polygons_list
+                
                     
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
         
-        self.panels_data[image_path]["polygons"] = polygons_list
-        self.panels_data[image_path]["geo_polygons"] = geo_polygons_list
+        
                     
-        #print(f"Guardando datos en {self.panels_data}")
+        print(f"Guardando datos en {self.panels_data}")
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
 
@@ -330,47 +317,80 @@ class SolarCorrector:
         
         print(f"Paneles detectados: {len(self.panels_data)}")
         
-    def correct_E(self):
+    def correct_lines(self):
         
         if self.list_flights == []:
             print("No hay vuelos para procesar")
-        
-        else:
             print(f"leyendo datos de {self.json_path}")
             self.init_from_json()
+            print("Datos leidos")
+            
+        
+        else:
+            print("Calculando desplazamientos de las lineas")
+            
         
         for flight in self.list_flights:
             for e, image_path in enumerate(flight):
-                data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
-                W, H, _ = data_image.shape
+                if e+1 < len(flight):
+                    data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
+                    W, H, _ = data_image.shape
+                    
+                    next_image_path = flight[e+1]
+                    
+                    polygons_image = self.panels_data[image_path]["polygons"]
+                    polygons_next_image = self.panels_data[next_image_path]["polygons"]
+                    
+                    middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
+                    middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
+                    
+                    x1, y1 = middle_polygon[0]
+                    x2, y2 = middle_polygon[1]
+                    x3, y3 = middle_polygon[2]
+                    x4, y4 = middle_polygon[3]
+                    
+                    x1_next, y1_next = middle_polygon_next[0]
+                    x2_next, y2_next = middle_polygon_next[1]
+                    x3_next, y3_next = middle_polygon_next[2]
+                    x4_next, y4_next = middle_polygon_next[3]
+                    
+                    metadata = MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt")
+                    metadata_next = MetadataManager().get_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt")
+                    
+                    geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
+                    geo_data_next = GeoProcessor().get_georef_matriz(metadata_next, metadata_next['offset_E_tot'], metadata_next['offset_N_tot'], metadata_next['offset_yaw'], metadata_next['offset_altura'])
+                    
+                    x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
+                    x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
+                    x3_utm, y3_utm = geo_data[y3][x3][0], geo_data[y3][x3][1]
+                    x4_utm, y4_utm = geo_data[y4][x4][0], geo_data[y4][x4][1]
+                    
+                    x1_utm_next, y1_utm_next = geo_data_next[y1_next][x1_next][0], geo_data_next[y1_next][x1_next][1]
+                    x2_utm_next, y2_utm_next = geo_data_next[y2_next][x2_next][0], geo_data_next[y2_next][x2_next][1]
+                    x3_utm_next, y3_utm_next = geo_data_next[y3_next][x3_next][0], geo_data_next[y3_next][x3_next][1]
+                    x4_utm_next, y4_utm_next = geo_data_next[y4_next][x4_next][0], geo_data_next[y4_next][x4_next][1]                    
+         
+   
+                    P1 = np.array([x1_utm, y1_utm])  # inicio de línea 1 en imagen 1
+                    P2 = np.array([x2_utm, y2_utm])  # fin de línea 1 en imagen 1
+                    Q1 = np.array([x1_utm_next, y1_utm_next])  # inicio de línea 1 en imagen 2
+                    Q2 = np.array([x2_utm_next, y2_utm_next])  # fin de línea 1 en imagen 2
+                                
+                    P3 = np.array([x3_utm, y3_utm])
+                    P4 = np.array([x4_utm, y4_utm])
+                    Q3 = np.array([x3_utm_next, y3_utm_next])
+                    Q4 = np.array([x4_utm_next, y4_utm_next])
+                    
+                    desp_este_1, desp_norte_1, desp_yaw_1 = GeoProcessor().aling_line(P1, P2, Q1, Q2)
+                    print(f"Desplazamiento Calculardo de {image_path} a {next_image_path}: {desp_este_1}, {desp_norte_1}, {desp_yaw_1}")
+                    desp_este_2, desp_norte_2, desp_yaw_2 = GeoProcessor().aling_line(P3, P4, Q3, Q4)
+                    
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este_1)
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_N', desp_norte_1)
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw_1)
+                    
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Corrected")
                 
-                next_image_path = flight[e+1]
-                
-                polygons_image = self.panels_data[image_path]["polygons"]
-                polygons_next_image = self.panels_data[next_image_path]["polygons"]
-                
-                middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
-                middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
-                
-                draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, middle_polygon)
-                           
-                geo_polygons_image = self.panels_data[image_path]["geo_polygons"]
-                geo_polygons_next_image = self.panels_data[next_image_path]["geo_polygons"]
-                
-                geo_middle_polygon = geo_polygons_image[e_middle_polygon]
-                geo_middle_polygon_next = geo_polygons_next_image[e_middle_polygon_next]
-                
-                
-                
-                
-                
-                
-                
-                
-        
-        
-    
-        pass
     
     def correct_H(self):
         pass
