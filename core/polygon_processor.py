@@ -1,5 +1,7 @@
 import numpy as np
 from core.geo_processor import GeoProcessor
+import cv2
+from core.image_processor import ImageHandler
 
 class PolygonProcessor:
     
@@ -27,7 +29,7 @@ class PolygonProcessor:
         
         return desp_este, desp_norte, desp_yaw
 
-    def align_east_yaw(self, P1, P2, Q1, Q2):
+    def align_yaw(self, P1, P2, Q1, Q2):
         # Paso 1: Alinear yaw
         vec_img1 = P2 - P1
         vec_img2 = Q2 - Q1
@@ -35,8 +37,12 @@ class PolygonProcessor:
         angle_img1 = np.arctan2(vec_img1[1], vec_img1[0])
         angle_img2 = np.arctan2(vec_img2[1], vec_img2[0])
         delta_yaw = angle_img1 - angle_img2
+        desp_yaw = np.degrees(delta_yaw)
+        return desp_yaw
+    
+    def align_east(self, P1, P2, Q1, Q2):
+   
 
-        # Paso 2: Calcular offset Este/Oeste solo (no mueve en Norte/Sur)
         u = (P2 - P1) / np.linalg.norm(P2 - P1)  # unitario sobre la línea
         n = np.array([-u[1], u[0]])              # perpendicular (Este/Oeste relativo a la línea)
         d = Q1 - P1
@@ -44,10 +50,9 @@ class PolygonProcessor:
         offset = -perp_offset * n
 
         desp_este = offset[0]
-        desp_norte = 0  # No movemos en Norte/Sur
+   
 
-        desp_yaw = np.degrees(delta_yaw)
-        return desp_este, desp_norte, desp_yaw
+        return desp_este
     
     def get_main_direction(self, polygons, W, H):
         angles = []
@@ -111,9 +116,9 @@ class PolygonProcessor:
         dy = np.sin(mean_mode_angle_rad) * L / 2
         start_point = (int(cx - dx), int(cy - dy))
         end_point = (int(cx + dx) - 1, int(cy + dy))
-        return mean_mode_angle_rad, start_point, end_point
+        return start_point, end_point
     
-    def get_desp_line(self, points, metadatas):
+    def get_desp_line_yaw(self, points, metadatas):
         
         x1, y1 = points[0]
         x2, y2 = points[1]
@@ -142,7 +147,49 @@ class PolygonProcessor:
                     
         
         
-        desp_este, desp_norte, desp_yaw = self.align_east_yaw(P1, P2, Q1, Q2)
+        desp_yaw = self.align_yaw(P1, P2, Q1, Q2)
 
         
-        return desp_este, desp_yaw
+        return desp_yaw
+    
+    
+    def get_middle_line(self, save_path,dir_path, image_path, panels_data, save_images: bool = False):        
+
+        data_image = cv2.imread(f"{dir_path}/{image_path}")
+        H, W, _ = data_image.shape
+        
+   
+        
+        polygons_image = panels_data[image_path]["polygons"]
+   
+        start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
+                    
+        if save_images:
+            data_image_copy = ImageHandler().draw_center_line(save_path, image_path, start_point, end_point)
+            cv2.imwrite(f"{save_path}/{image_path}", data_image_copy)
+
+        
+        return start_point, end_point
+    
+    def get_desp_yaw_image(self, transformer, puntos, start_point, end_point, metadata):
+        
+        angle_yaw = GeoProcessor().get_yaw_angle(puntos)
+        
+        x1, y1 = start_point
+        x2, y2 = end_point
+
+        geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
+                    
+        x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
+        x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
+        
+        lon1, lat1 = transformer.transform(x1_utm, y1_utm)
+        lon2, lat2 = transformer.transform(x2_utm, y2_utm)
+  
+        angle_img = GeoProcessor().get_angle_line([(lon1, lat1), (lon2, lat2)])
+
+
+        delta_yaw = angle_yaw - angle_img
+
+        return delta_yaw
+ 

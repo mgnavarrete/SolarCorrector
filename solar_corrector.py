@@ -18,10 +18,11 @@ from utils.config import Config
 
 class SolarCorrector:
     
-    def __init__(self, path_root: str, kml_path: str = None):
+    def __init__(self, path_root: str, kml_path: str = None, cvat_images: bool = True):
         paths = Config.get_project_paths(path_root)
         
         self.path_PP = paths["PP"]
+        self.cvat_images = cvat_images
         self.kml_path = kml_path
         self.original_images_path = paths["original_images"]
         self.cvat_images_path = paths["cvat_images"]
@@ -58,6 +59,7 @@ class SolarCorrector:
         os.makedirs(self.segmented_images_path, exist_ok=True)
         
     def init_from_json(self):
+        print(f"Cargando datos desde JSON")
         with open(self.json_path, 'r') as f:
             self.panels_data = json.load(f)
         
@@ -71,8 +73,8 @@ class SolarCorrector:
         
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
-        if self.list_flights != []:
-            MetadataManager().reset_all_metadata(self.list_flights, self.metadata_lines_path, var)
+       
+        MetadataManager().reset_all_metadata(self.list_images, self.metadata_lines_path, var)
         
     def save_geo_matrix(self):
         GeoProcessor().save_georef_matriz(self.list_images, self.metadata_path, self.geonp_path)
@@ -200,7 +202,10 @@ class SolarCorrector:
                 try:
                     # Cargar datos de la imagen con control de errores
                     try:
-                        data_image = ImageHandler().get_image_data(self.cvat_images_path + "/" + image_path)
+                        if self.cvat_images:
+                            data_image = ImageHandler().get_image_data(self.cvat_images_path + "/" + image_path)
+                        else:
+                            data_image = ImageHandler().get_image_data(self.original_images_path + "/" + image_path)
                     except FileNotFoundError:
                         print(f"Error: No se encontró la imagen {image_path}")
                         continue
@@ -209,7 +214,10 @@ class SolarCorrector:
                         continue
                     
                     try:
-                        data_processed_image, H, W = ImageHandler().process_image(self.cvat_images_path + "/" + image_path)
+                        if self.cvat_images:
+                            data_processed_image, H, W = ImageHandler().process_image(self.cvat_images_path + "/" + image_path, self.cvat_images)
+                        else:
+                            data_processed_image, H, W = ImageHandler().process_image(self.original_images_path + "/" + image_path, self.cvat_images)
                     except Exception as e:
                         print(f"Error al procesar la imagen con filtros de color {image_path}: {e}")
                         continue
@@ -311,61 +319,64 @@ class SolarCorrector:
 
         print(f"Paneles detectados: {len(self.panels_data)}")
         
-    def correct_lines(self, save_images: bool = False):
+        
+    def correct_yaw_img(self, save_images: bool = False, puntos: list = None):
         
         if self.list_flights == []:
-            print("No hay vuelos para procesar")
-            print(f"leyendo datos de {self.json_path}")
-            self.init_from_json()
-            print("Datos leidos")
-                
-        else:
-            print("Calculando desplazamientos de las lineas")
-            
-        
+            self.init_from_json()         
         for flight in tqdm(self.list_flights, desc="Calculando desplazamientos de las lineas"):
             for e, image_path in enumerate(flight):
                 if e+1 < len(flight):
-                    data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
-                    H, W, _ = data_image.shape
                     
                     next_image_path = flight[e+1]
                     
-                    polygons_image = self.panels_data[image_path]["polygons"]
-                    polygons_next_image = self.panels_data[next_image_path]["polygons"]
+                    start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
+                                                                                self.cvat_images_path, image_path, 
+                                                                                self.panels_data, save_images)
                     
-                    middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
-                    middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
-                    
-                    mean_mode_angle_rad, start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
-                    mean_mode_angle_rad_next, start_point_next, end_point_next = PolygonProcessor().get_main_direction_horizontal(polygons_next_image, W, H)
-                                        
-                    if save_images:
-                        data_image_copy = ImageHandler().draw_center_line(self.segmented_images_path, image_path, start_point, end_point)
-                        cv2.imwrite(f"{self.segmented_images_path}/{image_path}", data_image_copy)
-                        data_image_copy_next = ImageHandler().draw_center_line(self.segmented_images_path, next_image_path, start_point_next, end_point_next)
-                        cv2.imwrite(f"{self.segmented_images_path}/{next_image_path}", data_image_copy_next)
+                    start_point_next, end_point_next = PolygonProcessor().get_middle_line(self.segmented_images_path,
+                                                                                          self.cvat_images_path, next_image_path, 
+                                                                                          self.panels_data, save_images)
                         
-                        
-                    desp_este, desp_yaw = PolygonProcessor().get_desp_line([start_point, end_point, start_point_next, end_point_next], 
+                    desp_yaw = PolygonProcessor().get_desp_line_yaw([start_point, end_point, start_point_next, end_point_next], 
                                                                        [MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt"),
                                                                         MetadataManager().get_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt")])
                     
-                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este)
                     MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
                     
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_E', desp_este)
                     MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
            
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Corrected")
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
                 
-    
+    def correct_yaw(self, save_images: bool = False, puntos: list = None):
+        if self.list_flights == []:
+            self.init_from_json()         
+            
+        for flight in tqdm(self.list_flights, desc="Calculando desplazamientos de las lineas"):
+            for e, image_path in enumerate(flight):
+        
+                    start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
+                                                                                self.cvat_images_path, image_path, 
+                                                                                self.panels_data, save_images)
+            
+                    desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, puntos, start_point, end_point, 
+                                                                     MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt"))
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+           
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
+        
+        
+        
+        
+        
+        
+        
     def correct_H(self):
         pass
-    
-    def correct_yaw(self):
-        pass
-    
+
  
 
 

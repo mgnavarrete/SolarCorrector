@@ -5,7 +5,7 @@ import numpy as np
 import string
 import utm
 from core.metadata_manager import MetadataManager
-
+import math
 class GeoProcessor:
 
     
@@ -370,5 +370,68 @@ class GeoProcessor:
         except Exception as e:
             print(f"Error general en save_kml_vuelos: {e}")
             
+    def get_yaw_angle(self, puntos):
+        """
+        Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
+        respecto al norte del lado más largo.
+        """
+        lados = []
+        n = len(puntos)
+        
+        for i in range(n - 1):
+            x1, y1, _ = puntos[i]
+            x2, y2, _ = puntos[i+1]
+            # Distancia euclidiana (aproximación para distancias cortas)
+            distancia = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            lados.append((distancia, i, i+1))
+        
+        # Encuentra el lado más largo
+        lado_mas_largo = max(lados, key=lambda l: l[0])
+        _, idx1, idx2 = lado_mas_largo
+
+        x1, y1, _ = puntos[idx1]
+        x2, y2, _ = puntos[idx2]
+
+        # Calcular el ángulo respecto al norte (latitud positiva)
+        delta_x = x2 - x1
+        delta_y = y2 - y1
+        angulo_rad = math.atan2(delta_x, delta_y)
+        angulo_deg = math.degrees(angulo_rad)
+        
+        # Asegúrate de que el ángulo esté entre 0 y 360
+        if angulo_deg < 0:
+            angulo_deg += 360
+            
+    
+
+        return angulo_deg
+        
+    def get_angle_line(self, puntos):
+        """
+        Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
+        respecto al norte del lado más largo.
+        """      
+        # quiero asegurarme de que siempre el x1 sea el mas hacia el norte y el x2 el mas hacia el sur
+        if puntos[0][1] < puntos[1][1]:
+            x1, y1 = puntos[1]
+            x2, y2 = puntos[0]
+        else:
+            x1, y1 = puntos[0]
+            x2, y2 = puntos[1]
+
+
+        # Calcular el ángulo respecto al norte (latitud positiva)
+        delta_x = x2 - x1
+        delta_y = y2 - y1
+        angulo_rad = math.atan2(delta_x, delta_y)
+        angulo_deg = math.degrees(angulo_rad)
+        
+        # Asegúrate de que el ángulo esté entre 0 y 360
+        if angulo_deg < 0:
+            angulo_deg += 360
+            
+        print(f"Angulo de la linea: {angulo_deg}")
+
+        return angulo_deg        
     
     

@@ -25,36 +25,41 @@ class ImageHandler:
             print(f"Error inesperado en get_image_data: {e}")
             return None
     
-    def process_image(self, image_path: str):
+    def process_image(self, image_path: str, cvat_images: bool = True):
         try:
             if not os.path.exists(image_path):
                 raise FileNotFoundError(f"No se encontró la imagen en la ruta: {image_path}")
+            
             
             data_image = cv2.imread(image_path)
             if data_image is None:
                 raise ValueError(f"No se pudo cargar la imagen desde: {image_path}")
             
-            H, W, _ = data_image.shape
-            img_resized = cv2.resize(data_image, (640, 640))
+            if cvat_images:
+                H, W, _ = data_image.shape
+                img_resized = cv2.resize(data_image, (640, 640))
 
-            # pasar a escala de grises
-            img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
-            # aplicar filtro gaussiano
-            img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0)
-            
-           
-
-            # aplicar mas brillo
-            img_gray = cv2.addWeighted(img_gray, 1.5, img_gray, 0, 0)
-            
-             # Aplicar un sharpening más intenso
-            kernel = np.array([[0, -2, 0], [-2, 9, -2], [0, -2, 0]])
-            img_gray = cv2.filter2D(img_gray, -1, kernel)
+                # pasar a escala de grises
+                img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
+                # aplicar filtro gaussiano
+                img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0)
+                
             
 
-            # pasar a canal BGR pero manteniendo los bordes y el color gris
-            img_final = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
-            
+                # aplicar mas brillo
+                img_gray = cv2.addWeighted(img_gray, 1.5, img_gray, 0, 0)
+                
+                # Aplicar un sharpening más intenso
+                kernel = np.array([[0, -2, 0], [-2, 9, -2], [0, -2, 0]])
+                img_gray = cv2.filter2D(img_gray, -1, kernel)
+                
+
+                # pasar a canal BGR pero manteniendo los bordes y el color gris
+                img_final = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
+            else:
+                img_final = data_image
+                H, W, _ = img_final.shape
+                
             return img_final, H, W
         except FileNotFoundError as e:
             print(f"Error de archivo: {e}")
