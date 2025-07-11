@@ -4,6 +4,7 @@ import json
 import numpy as np
 import string
 import utm
+from core.metadata_manager import MetadataManager
 
 class GeoProcessor:
 
@@ -262,7 +263,7 @@ class GeoProcessor:
             print(f"Error en save_georef_matriz: {e}")
             return None
     
-    def save_kml_vuelos(self, path_PP, metadata_path, list_vuelos, name=""):
+    def save_kml_vuelos(self, path_PP, dir_images_path, metadata_path, list_vuelos, name=""):
         try:
             # Verifica que existan las carpetas necesarias
             if not os.path.exists(path_PP):
@@ -326,7 +327,7 @@ class GeoProcessor:
                                                     "_DA" + str(data2['offset_altura']) + \
                                                     "_MA" + str(data2['modo_altura'])
 
-                                txt_href = f'original_img/{nombre}.JPG'
+                                txt_href = f'{dir_images_path.split("/")[-1]}/{nombre}.JPG'
                                 a = f'''<GroundOverlay>
                     <name>{nombre + txt_desplazamiento}</name>
                     <Icon>
@@ -370,81 +371,4 @@ class GeoProcessor:
             print(f"Error general en save_kml_vuelos: {e}")
             
     
-    def rotate_point(self, pt, centro, ang):
-        c, s = np.cos(ang), np.sin(ang)
-        R = np.array([[c, -s], [s, c]])
-        return R @ (pt - centro) + centro
-        
-    def aling_line(self, P1, P2, Q1, Q2):
-        
-
-        # === 2. Calcula los vectores y ángulos de ambas líneas ===
-
-        vec_img1 = P2 - P1
-        angle_img1 = np.arctan2(vec_img1[1], vec_img1[0])
-
-        vec_img2 = Q2 - Q1
-        angle_img2 = np.arctan2(vec_img2[1], vec_img2[0])
-        delta_yaw = angle_img1 - angle_img2
-
-        offset = P2 - Q1
-        desp_este = offset[0]
-        desp_norte = offset[1]
-        desp_yaw = np.degrees(delta_yaw)
-        
-        return desp_este, desp_norte, desp_yaw
-
-    def align_east_yaw(self, P1, P2, Q1, Q2):
-        # Paso 1: Alinear yaw
-        vec_img1 = P2 - P1
-        vec_img2 = Q2 - Q1
-        
-        angle_img1 = np.arctan2(vec_img1[1], vec_img1[0])
-        angle_img2 = np.arctan2(vec_img2[1], vec_img2[0])
-        delta_yaw = angle_img1 - angle_img2
-
-        # Paso 2: Calcular offset Este/Oeste solo (no mueve en Norte/Sur)
-        u = (P2 - P1) / np.linalg.norm(P2 - P1)  # unitario sobre la línea
-        n = np.array([-u[1], u[0]])              # perpendicular (Este/Oeste relativo a la línea)
-        d = Q1 - P1
-        perp_offset = np.dot(d, n)
-        offset = -perp_offset * n
-
-        desp_este = offset[0]
-        desp_norte = 0  # No movemos en Norte/Sur
-
-        desp_yaw = np.degrees(delta_yaw)
-        return desp_este, desp_norte, desp_yaw
     
-    def get_main_direction(self, polygons, W, H):
-        angles = []
-        for poly in polygons:
-            p1 = np.array(poly[0]); p2 = np.array(poly[1])
-            p3 = np.array(poly[2]); p4 = np.array(poly[3])
-            # Línea 1
-            vec1 = p2 - p1
-            angle1 = np.arctan2(vec1[1], vec1[0])
-            angles.append(angle1)
-            # Línea 2
-            vec2 = p4 - p3
-            angle2 = np.arctan2(vec2[1], vec2[0])
-            angles.append(angle2)
-        # Moda por histograma (en grados 0-180)
-        angles_deg = np.degrees(angles)
-        angles_deg = np.mod(angles_deg, 180)
-        hist, bin_edges = np.histogram(angles_deg, bins=36, range=(0, 180))
-        max_bin = np.argmax(hist)
-        in_mode = (angles_deg >= bin_edges[max_bin]) & (angles_deg < bin_edges[max_bin+1])
-        mode_angles = np.array(angles_deg)[in_mode]
-        mean_mode_angle = mode_angles.mean()
-        mean_mode_angle_rad = np.radians(mean_mode_angle)
-        # Línea principal desde el centro
-        cx, cy = W // 2, H // 2
-        L = min(W, H)
-        dx = np.cos(mean_mode_angle_rad) * L / 2
-        dy = np.sin(mean_mode_angle_rad) * L / 2
-        start_point = (cx - dx, cy - dy)
-        end_point = (cx + dx, cy + dy)
-        return mean_mode_angle_rad, start_point, end_point
-
-            

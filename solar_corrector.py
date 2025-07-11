@@ -9,50 +9,52 @@ import shutil
 from core.image_processor import ImageHandler
 from core.metadata_manager import MetadataManager
 from core.geo_processor import GeoProcessor
+from core.polygon_processor import PolygonProcessor
 import json
 from scipy.optimize import minimize
+from utils.config import Config
+
+
 
 class SolarCorrector:
+    
     def __init__(self, path_root: str, kml_path: str = None):
+        paths = Config.get_project_paths(path_root)
         
-        self.path_PP = f"{path_root}PP"                                             # Path de la carpeta PP
-        self.kml_path = kml_path                                                    # Path de la tabla kml
-        self.original_images_path = os.path.join(self.path_PP, 'original_img')      # Path de las imágenes originales
-        self.cvat_images_path = os.path.join(self.path_PP, 'cvat')                  # Path de las imágenes cvat
-        self.lines_images_path = os.path.join(self.path_PP, 'lines')                # Path de las imágenes de las lineas
-        self.metadata_lines_path = os.path.join(self.path_PP, 'metadata_lines')     # Path de los archivos JSON de metadatos de las lineas
-        self.geonp_path = os.path.join(self.path_PP, 'georef_numpy')                # Path de los archivos numpy georeferenciados
-        self.metadata_path = os.path.join(self.path_PP, 'metadata')                 # Path de los archivos JSON de metadatos
-        self.model = YOLO('utils/PANEL-SEG-v1.pt')                                  # Modelo de YOLO
-        self.list_images = os.listdir(self.cvat_images_path)                        # Lista de imágenes cvat
+        self.path_PP = paths["PP"]
+        self.kml_path = kml_path
+        self.original_images_path = paths["original_images"]
+        self.cvat_images_path = paths["cvat_images"]
+        self.lines_images_path = paths["lines_images"]
+        self.metadata_lines_path = paths["metadata_lines"]
+        self.geonp_path = paths["geonp"]
+        self.metadata_path = paths["metadata"]
+        self.masks_path = paths["masks"]
+        self.segmented_images_path = paths["segmented_images"]
+        self.json_path = paths["json_path"]
+        self.flights_json = paths["flights_json"]
+
+        # Modelo YOLO con ruta y parámetros centralizados
+        self.model = YOLO(Config.MODEL_PATH)
+
+        self.list_images = os.listdir(self.cvat_images_path)
         self.list_flights = []
         self.zone_number = 19
         self.zone_letter = 'S'
+
         self.utm_crs = CRS(f"+proj=utm +zone={self.zone_number} +{'+south' if self.zone_letter > 'N' else ''} +ellps=WGS84")
         self.latlon_crs = CRS("EPSG:4326")
         self.transformer = Transformer.from_crs(self.utm_crs, self.latlon_crs, always_xy=True)
-        self.masks_path = os.path.join(self.path_PP, 'masks')
-        self.segmented_images_path = os.path.join(self.path_PP, 'segmented_images')
-        self.list_areas = []
-        self.json_path = os.path.join(self.path_PP, 'corrector_data.json')
+
         
         self.panels_data = {}
         for image_path in self.list_images:
-            self.panels_data[image_path] = {"polygons":[], "geo_polygons":[], "isFlight":False, "area":0}
-    
+            self.panels_data[image_path] = {"polygons":[]}
         
-        if kml_path is not None:
-            self.df = pd.read_csv(kml_path)
-            for col in ['polyP1', 'polyP2', 'polyP3', 'polyP4']:
-                self.df[col] = self.df[col].apply(lambda x: tuple(map(float, x.split(','))))
-
-            self.yaw_mean = self.df['yaw'].mean()                                  # Yaw medio de las lineas
-            self.ancho_mean = self.df['ancho'].mean()    
-            # Ancho medio de las lineas
-            
+        # Crear las carpetas si no existen
         os.makedirs(self.lines_images_path, exist_ok=True)
         os.makedirs(self.metadata_lines_path, exist_ok=True)
-        os.makedirs(self.masks_path, exist_ok=True)    
+        os.makedirs(self.masks_path, exist_ok=True)
         os.makedirs(self.segmented_images_path, exist_ok=True)
         
     def init_from_json(self):
@@ -63,7 +65,7 @@ class SolarCorrector:
         with open(f"{self.path_PP}/list_flights.json", 'r') as f:
             self.list_flights = json.load(f)
                  
-        self.list_areas = [area for area in self.panels_data.values() if area["area"]]
+
 
         print(f"Datos cargados de exitosamente")
         
@@ -167,8 +169,7 @@ class SolarCorrector:
                 try:
                     shutil.copy(self.cvat_images_path + "/" + image_path, self.lines_images_path + "/" + image_path)
                     shutil.copy(self.metadata_path + "/" + image_path[:-4] + '.txt', self.metadata_lines_path + "/" + image_path[:-4] + '.txt')
-                    self.panels_data[image_path]["isFlight"] = True
-                    
+  
                 except FileNotFoundError as e:
                     print(f"Error: No se encontró el archivo {image_path} o su metadata")
                     
@@ -178,7 +179,7 @@ class SolarCorrector:
         self.list_flights = new_flights
         
         if save_kml:
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Flights")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
@@ -280,11 +281,7 @@ class SolarCorrector:
                                             x2, y2 = points_ordered[1]
                                             x3, y3 = points_ordered[2]
                                             x4, y4 = points_ordered[3]
-                                          
-
-                                            area = ImageHandler().get_area_polygon(points_ordered)
-                                            self.list_areas.append(area)
-                                            self.panels_data[image_path]["area"] = float(area)
+                                                                                                                     
                                             polygons_list.append([(int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)), (int(x4), int(y4))])
                                             
                                             if save_masks:
@@ -309,25 +306,19 @@ class SolarCorrector:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
         
-        
-                    
-        print(f"Guardando datos en {self.panels_data}")
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
 
-    
-        
         print(f"Paneles detectados: {len(self.panels_data)}")
         
-    def correct_lines(self):
+    def correct_lines(self, save_images: bool = False):
         
         if self.list_flights == []:
             print("No hay vuelos para procesar")
             print(f"leyendo datos de {self.json_path}")
             self.init_from_json()
             print("Datos leidos")
-            
-        
+                
         else:
             print("Calculando desplazamientos de las lineas")
             
@@ -336,7 +327,7 @@ class SolarCorrector:
             for e, image_path in enumerate(flight):
                 if e+1 < len(flight):
                     data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
-                    W, H, _ = data_image.shape
+                    H, W, _ = data_image.shape
                     
                     next_image_path = flight[e+1]
                     
@@ -346,57 +337,27 @@ class SolarCorrector:
                     middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
                     middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
                     
-                    mean_mode_angle_rad, start_point, end_point = GeoProcessor().get_main_direction(polygons_image, W, H)
-                    mean_mode_angle_rad_next, start_point_next, end_point_next = GeoProcessor().get_main_direction(polygons_next_image, W, H)
+                    mean_mode_angle_rad, start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
+                    mean_mode_angle_rad_next, start_point_next, end_point_next = PolygonProcessor().get_main_direction_horizontal(polygons_next_image, W, H)
+                                        
+                    if save_images:
+                        data_image_copy = ImageHandler().draw_center_line(self.segmented_images_path, image_path, start_point, end_point)
+                        cv2.imwrite(f"{self.segmented_images_path}/{image_path}", data_image_copy)
+                        data_image_copy_next = ImageHandler().draw_center_line(self.segmented_images_path, next_image_path, start_point_next, end_point_next)
+                        cv2.imwrite(f"{self.segmented_images_path}/{next_image_path}", data_image_copy_next)
+                        
+                        
+                    desp_este, desp_yaw = PolygonProcessor().get_desp_line([start_point, end_point, start_point_next, end_point_next], 
+                                                                       [MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt"),
+                                                                        MetadataManager().get_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt")])
                     
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este)
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
                     
-                    
-                    x1, y1 = middle_polygon[0]
-                    x2, y2 = middle_polygon[1]
-                    x3, y3 = middle_polygon[2]
-                    x4, y4 = middle_polygon[3]
-                    
-                    x1_next, y1_next = middle_polygon_next[0]
-                    x2_next, y2_next = middle_polygon_next[1]
-                    x3_next, y3_next = middle_polygon_next[2]
-                    x4_next, y4_next = middle_polygon_next[3]
-                    
-                    metadata = MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt")
-                    metadata_next = MetadataManager().get_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt")
-                    
-                    geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
-                    geo_data_next = GeoProcessor().get_georef_matriz(metadata_next, metadata_next['offset_E_tot'], metadata_next['offset_N_tot'], metadata_next['offset_yaw'], metadata_next['offset_altura'])
-                    
-                    x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
-                    x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
-                    x3_utm, y3_utm = geo_data[y3][x3][0], geo_data[y3][x3][1]
-                    x4_utm, y4_utm = geo_data[y4][x4][0], geo_data[y4][x4][1]
-                    
-                    x1_utm_next, y1_utm_next = geo_data_next[y1_next][x1_next][0], geo_data_next[y1_next][x1_next][1]
-                    x2_utm_next, y2_utm_next = geo_data_next[y2_next][x2_next][0], geo_data_next[y2_next][x2_next][1]
-                    x3_utm_next, y3_utm_next = geo_data_next[y3_next][x3_next][0], geo_data_next[y3_next][x3_next][1]
-                    x4_utm_next, y4_utm_next = geo_data_next[y4_next][x4_next][0], geo_data_next[y4_next][x4_next][1]                    
-         
-   
-                    P1 = np.array([x1_utm, y1_utm])  # inicio de línea 1 en imagen 1
-                    P2 = np.array([x2_utm, y2_utm])  # fin de línea 1 en imagen 1
-                    Q1 = np.array([x1_utm_next, y1_utm_next])  # inicio de línea 1 en imagen 2
-                    Q2 = np.array([x2_utm_next, y2_utm_next])  # fin de línea 1 en imagen 2
-                                
-                    P3 = np.array([x3_utm, y3_utm])
-                    P4 = np.array([x4_utm, y4_utm])
-                    Q3 = np.array([x3_utm_next, y3_utm_next])
-                    Q4 = np.array([x4_utm_next, y4_utm_next])
-                    
-                    desp_este_1, desp_norte_1, desp_yaw_1 = GeoProcessor().align_east_yaw(P1, P2, Q1, Q2)
-                    # print(f"Desplazamiento Calculardo de {image_path} a {next_image_path}: {desp_este_1}, {desp_norte_1}, {desp_yaw_1}")
-                    desp_este_2, desp_norte_2, desp_yaw_2 = GeoProcessor().align_east_yaw(P3, P4, Q3, Q4)
-                    
-                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este_1)
-                    # MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_N', desp_norte_1)
-                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw_1)
-                    
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Corrected")
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_E', desp_este)
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+           
+        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Corrected")
                 
     
     def correct_H(self):

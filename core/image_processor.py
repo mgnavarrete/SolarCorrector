@@ -185,10 +185,10 @@ class ImageHandler:
             print(f"Error inesperado en order_points: {e}")
             return None
     
-    def draw_segmented_image(self, segmented_images_path: str, image_path: str, points: list[tuple[float, float]]):
+    def draw_segmented_image(self, dir_path: str, image_path: str, points: list[tuple[float, float]]):
         try:
             
-            data_image_copy = cv2.imread(f"{segmented_images_path}/{image_path}")
+            data_image_copy = cv2.imread(f"{dir_path}/{image_path}")
                 
             points_np = np.array(points, np.int32)
             points_np = points_np.reshape((-1, 1, 2))
@@ -248,5 +248,25 @@ class ImageHandler:
             return None
         except Exception as e:
             print(f"Error inesperado en find_middle_polygon: {e}")
+            return None
+        
+    def draw_center_line(self, dir_path: str, image_path: str, start_point: tuple[float, float], end_point: tuple[float, float]):
+        try:
+            
+            data_image_copy = cv2.imread(f"{dir_path}/{image_path}")
+                
+            points_np = np.array([start_point, end_point], np.int32)
+            points_np = points_np.reshape((-1, 1, 2))
+            cv2.polylines(data_image_copy, [points_np], isClosed=False, color=(255, 255, 0), thickness=3)
+
+            cv2.circle(data_image_copy, (start_point[0], start_point[1]), 5, (255, 0, 0), -1)
+            cv2.circle(data_image_copy, (end_point[0], end_point[1]), 5, (0, 255, 255), -1)
+            
+            return data_image_copy
+        except ValueError as e:
+            print(f"Error de valor en draw_center_line: {e}")
+            return None
+        except Exception as e:
+            print(f"Error inesperado en draw_center_line: {e}")
             return None
         
