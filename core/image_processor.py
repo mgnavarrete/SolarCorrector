@@ -65,7 +65,7 @@ class ImageHandler:
         except Exception as e:
             print(f"Error inesperado en process_image: {e}")
             return None, None, None
-    
+        
     def haversine_distance(self, lat1: float, lon1: float, lat2: float, lon2: float):
         try:
             # Validar que las coordenadas estén en rangos válidos
@@ -188,8 +188,8 @@ class ImageHandler:
     def draw_segmented_image(self, segmented_images_path: str, image_path: str, points: list[tuple[float, float]]):
         try:
             
-            
             data_image_copy = cv2.imread(f"{segmented_images_path}/{image_path}")
+                
             points_np = np.array(points, np.int32)
             points_np = points_np.reshape((-1, 1, 2))
             cv2.polylines(data_image_copy, [points_np], isClosed=True, color=(0, 255, 0), thickness=3)

@@ -64,11 +64,13 @@ class SolarCorrector:
             self.list_flights = json.load(f)
                  
         self.list_areas = [area for area in self.panels_data.values() if area["area"]]
-        print(f"Vuelos leidos: {self.list_flights[0]}")
-        print(f"Datos cargados de {self.json_path}")
+
+        print(f"Datos cargados de exitosamente")
         
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
+        if self.list_flights != []:
+            MetadataManager().reset_all_metadata(self.list_flights, self.metadata_lines_path, var)
         
     def save_geo_matrix(self):
         GeoProcessor().save_georef_matriz(self.list_images, self.metadata_path, self.geonp_path)
@@ -330,7 +332,7 @@ class SolarCorrector:
             print("Calculando desplazamientos de las lineas")
             
         
-        for flight in self.list_flights:
+        for flight in tqdm(self.list_flights, desc="Calculando desplazamientos de las lineas"):
             for e, image_path in enumerate(flight):
                 if e+1 < len(flight):
                     data_image = cv2.imread(self.cvat_images_path + "/" + image_path)
@@ -343,6 +345,11 @@ class SolarCorrector:
                     
                     middle_polygon, e_middle_polygon = ImageHandler().find_middle_polygon(polygons_image, W, H)
                     middle_polygon_next, e_middle_polygon_next = ImageHandler().find_middle_polygon(polygons_next_image, W, H)
+                    
+                    mean_mode_angle_rad, start_point, end_point = GeoProcessor().get_main_direction(polygons_image, W, H)
+                    mean_mode_angle_rad_next, start_point_next, end_point_next = GeoProcessor().get_main_direction(polygons_next_image, W, H)
+                    
+                    
                     
                     x1, y1 = middle_polygon[0]
                     x2, y2 = middle_polygon[1]
@@ -381,13 +388,13 @@ class SolarCorrector:
                     Q3 = np.array([x3_utm_next, y3_utm_next])
                     Q4 = np.array([x4_utm_next, y4_utm_next])
                     
-                    desp_este_1, desp_norte_1, desp_yaw_1 = GeoProcessor().aling_line(P1, P2, Q1, Q2)
-                    print(f"Desplazamiento Calculardo de {image_path} a {next_image_path}: {desp_este_1}, {desp_norte_1}, {desp_yaw_1}")
-                    desp_este_2, desp_norte_2, desp_yaw_2 = GeoProcessor().aling_line(P3, P4, Q3, Q4)
+                    desp_este_1, desp_norte_1, desp_yaw_1 = GeoProcessor().align_east_yaw(P1, P2, Q1, Q2)
+                    # print(f"Desplazamiento Calculardo de {image_path} a {next_image_path}: {desp_este_1}, {desp_norte_1}, {desp_yaw_1}")
+                    desp_este_2, desp_norte_2, desp_yaw_2 = GeoProcessor().align_east_yaw(P3, P4, Q3, Q4)
                     
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este_1)
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_N', desp_norte_1)
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw_1)
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_este_1)
+                    # MetadataManager().adjust_metadata(f"{self.metadata_path}/{next_image_path[:-4]}.txt", 'offset_N', desp_norte_1)
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw_1)
                     
         GeoProcessor().save_kml_vuelos(self.path_PP, self.metadata_lines_path, self.list_flights, name="Corrected")
                 
