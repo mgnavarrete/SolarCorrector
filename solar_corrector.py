@@ -203,7 +203,7 @@ class SolarCorrector:
             json.dump(self.list_flights, f)
         
         
-    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500):
+    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500, save_kml: bool = False):
         print(f"Detectando paneles en {self.path_PP}")
         
         if self.list_flights == []:
@@ -346,7 +346,8 @@ class SolarCorrector:
             json.dump(self.list_flights, f)
 
         print(f"Paneles detectados: {len(self.panels_data)}")
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
+        if save_kml:
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
         
                 
     def correct_yaw(self, save_images: bool = False, save_kml: bool = False):
