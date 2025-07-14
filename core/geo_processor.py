@@ -266,21 +266,19 @@ class GeoProcessor:
         """
         Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
         respecto al norte del lado más largo.
-        Sistema de coordenadas: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
-        """      
-        # quiero asegurarme de que siempre el x1 sea el mas hacia el norte y el x2 el mas hacia el sur
-      
-
-        pos_start = puntos[0]
-        pos_end = puntos[1]
+        Sistema de coordenadas: 0°=Norte, -45°=Este, 90°=Sur, 45°=Oeste
+        """     
+        pos_start_utm = puntos[0]
+        pos_end_utm = puntos[1]
         
         # Asegurarse de que el punto 1 sea el mas hacia el norte y el punto 2 el mas hacia el sur
-        if pos_start[1] > pos_end[1]:
-            pos_start, pos_end = pos_end, pos_start
+        if pos_start_utm[1] > pos_end_utm[1]:
+            pos_start_utm, pos_end_utm = pos_end_utm, pos_start_utm
         
         
-        delta_x = pos_end[0] - pos_start[0]
-        delta_y = pos_end[1] - pos_start[1]
+        delta_x = pos_end_utm[0] - pos_start_utm[0]
+        delta_y = pos_end_utm[1] - pos_start_utm[1]
+        
         angulo_rad = math.atan2(delta_x, delta_y)
         angulo_deg = math.degrees(angulo_rad)
         

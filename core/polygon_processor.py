@@ -99,6 +99,7 @@ class PolygonProcessor:
             vec2 = p1 - p4
             angle2 = np.arctan2(vec2[1], vec2[0])
             angles.append(angle2)
+            
         # Moda por histograma (en grados 0-180)
         angles_deg = np.degrees(angles)
         angles_deg = np.mod(angles_deg, 180)
@@ -117,9 +118,17 @@ class PolygonProcessor:
         start_point = (int(cx - dx), int(cy - dy))
         end_point = (int(cx + dx) - 1, int(cy + dy))
         
+     
+        
+        
         # Hacer que siempre el putno a la mas derecha de la imagen sea el end_point
         if start_point[0] > end_point[0]:
             start_point, end_point = end_point, start_point
+            
+        if start_point[0] < 0 :
+            start_point = (0, start_point[1])
+        if end_point[0] > W - 1:
+            end_point = (W - 1, end_point[1])
         
         return start_point, end_point
     
@@ -176,19 +185,34 @@ class PolygonProcessor:
         
         return start_point, end_point
     
-    def get_desp_yaw_image(self, transformer, puntos, start_point, end_point, metadata):
+    def get_desp_yaw_image(self, transformer, start_point, end_point, metadata):
         
         angle_yaw = 0
         
         x1, y1 = start_point
         x2, y2 = end_point
+        
+        print(f"Puntos: {start_point}, {end_point}")
+        
+        # sacar pendiente de la linea
+        slope = (y2 - y1) / (x2 - x1)
+        angle_slope = np.arctan(slope)
+        angle_slope_deg = np.degrees(angle_slope)
+     
+        
+        # sacar angulo de la linea
+        
 
-        geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
+        geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], 
+                                                    metadata['offset_N_tot'], metadata['offset_yaw'], 
+                                                    metadata['offset_altura'], metadata['modo_altura'])
                     
                     
         pos_start = geo_data[y1][x1]
         pos_end = geo_data[y2][x2]
-          
+        
+
+        
         angle_img = GeoProcessor().get_angle_line([pos_start, pos_end])
         
 

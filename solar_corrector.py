@@ -360,7 +360,7 @@ class SolarCorrector:
         GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
         GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
                 
-    def correct_yaw(self, save_images: bool = False, puntos: list = None):
+    def correct_yaw(self, save_images: bool = False):
         if self.list_flights == []:
             self.init_from_json()         
             
@@ -371,8 +371,9 @@ class SolarCorrector:
                                                                                 self.cvat_images_path, image_path, 
                                                                                 self.panels_data, save_images)
             
-                    desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, puntos, start_point, end_point, 
+                    desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, start_point, end_point, 
                                                                      MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt"))
+                    
                     MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
                     MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
            
