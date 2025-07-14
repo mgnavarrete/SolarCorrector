@@ -88,36 +88,19 @@ class PolygonProcessor:
         return mean_mode_angle_rad, start_point, end_point
 
     def get_main_direction_horizontal(self, polygons, W, H):
+        print(f"polygons: {polygons}")
         angles = []
         for poly in polygons:
             p1 = np.array(poly[0]); p2 = np.array(poly[1])
             p3 = np.array(poly[2]); p4 = np.array(poly[3])
-            
-            # Encontrar los pares de puntos más cercanos en el eje Y (más horizontales)
-            # Calcular diferencias en Y entre pares de puntos
-            diff_y_12 = abs(p1[1] - p2[1])  # diferencia Y entre p1 y p2
-            diff_y_23 = abs(p2[1] - p3[1])  # diferencia Y entre p2 y p3
-            diff_y_34 = abs(p3[1] - p4[1])  # diferencia Y entre p3 y p4
-            diff_y_41 = abs(p4[1] - p1[1])  # diferencia Y entre p4 y p1
-            
-            # Crear lista de pares con sus diferencias Y
-            pairs = [
-                (diff_y_12, p1, p2),
-                (diff_y_23, p2, p3), 
-                (diff_y_34, p3, p4),
-                (diff_y_41, p4, p1)
-            ]
-            
-            # Ordenar por diferencia Y (menor diferencia = más horizontal)
-            pairs.sort(key=lambda x: x[0])
-            
-            # Tomar los dos pares más horizontales (con Y más cercanas)
-            for i in range(2):
-                _, pt1, pt2 = pairs[i]
-                # Calcular vector y ángulo para esta línea horizontal
-                vec = pt2 - pt1
-                angle = np.arctan2(vec[1], vec[0])
-                angles.append(angle)
+            # Línea horizontal superior (p2 a p3)
+            vec1 = p3 - p2
+            angle1 = np.arctan2(vec1[1], vec1[0])
+            angles.append(angle1)
+            # Línea horizontal inferior (p4 a p1)
+            vec2 = p1 - p4
+            angle2 = np.arctan2(vec2[1], vec2[0])
+            angles.append(angle2)
             
         # Moda por histograma (en grados 0-180)
         angles_deg = np.degrees(angles)
@@ -128,8 +111,6 @@ class PolygonProcessor:
         mode_angles = np.array(angles_deg)[in_mode]
         mean_mode_angle = mode_angles.mean()
         mean_mode_angle_rad = np.radians(mean_mode_angle)
-        
-        print(f"mean_mode_angle: {mean_mode_angle}")
         # Línea principal que cruza toda la imagen horizontalmente
         cx, cy = W // 2, H // 2
         # Usar el ancho completo de la imagen para que cruce horizontalmente
