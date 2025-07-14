@@ -116,6 +116,11 @@ class PolygonProcessor:
         dy = np.sin(mean_mode_angle_rad) * L / 2
         start_point = (int(cx - dx), int(cy - dy))
         end_point = (int(cx + dx) - 1, int(cy + dy))
+        
+        # Hacer que siempre el putno a la mas derecha de la imagen sea el end_point
+        if start_point[0] > end_point[0]:
+            start_point, end_point = end_point, start_point
+        
         return start_point, end_point
     
     def get_desp_line_yaw(self, points, metadatas):
@@ -173,21 +178,19 @@ class PolygonProcessor:
     
     def get_desp_yaw_image(self, transformer, puntos, start_point, end_point, metadata):
         
-        angle_yaw = GeoProcessor().get_yaw_angle(puntos)
+        angle_yaw = 0
         
         x1, y1 = start_point
         x2, y2 = end_point
 
         geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], metadata['offset_N_tot'], metadata['offset_yaw'], metadata['offset_altura'])
                     
-        x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
-        x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
+                    
+        pos_start = geo_data[y1][x1]
+        pos_end = geo_data[y2][x2]
+          
+        angle_img = GeoProcessor().get_angle_line([pos_start, pos_end])
         
-        lon1, lat1 = transformer.transform(x1_utm, y1_utm)
-        lon2, lat2 = transformer.transform(x2_utm, y2_utm)
-  
-        angle_img = GeoProcessor().get_angle_line([(lon1, lat1), (lon2, lat2)])
-
 
         delta_yaw = angle_yaw - angle_img
 

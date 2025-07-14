@@ -1,7 +1,8 @@
 import os
 from tqdm import tqdm
 import json
-
+import subprocess
+import io
 
 class MetadataManager:
 
@@ -162,3 +163,21 @@ class MetadataManager:
         except Exception as e:
             print(f"Error inesperado al cargar metadatos de {image_path}: {e}")
             return None
+        
+    def extract_metadata(self, image_path, save_path):
+
+        # call exiftool with 'JSON'-output flag
+        EXIFTOOL = "exiftool"
+
+        cmd = [EXIFTOOL, image_path, "-a", "-j", "-z"]
+        dta = subprocess.check_output(cmd, universal_newlines=True)
+        # convert to stream and load using 'json' library
+        data = json.load(io.StringIO(dta))
+        # reduce dimension if singleton
+        if isinstance(data, list) and len(data) == 1:
+            data = data[0]
+            
+        with open(save_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        
+        return data

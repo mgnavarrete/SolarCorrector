@@ -6,6 +6,8 @@ import string
 import utm
 from core.metadata_manager import MetadataManager
 import math
+from core.camera_processor import CameraProcessor
+
 class GeoProcessor:
 
     
@@ -62,170 +64,12 @@ class GeoProcessor:
         except Exception as e:
             print(f"Error general en delete_geoMatrix: {e}")
     
-    def dms2dd(self, data):
-        try:
-            if len(data) < 4:
-                raise ValueError("Los datos DMS deben tener al menos 4 elementos")
-            dd = float(data[0]) + float(data[1]) / 60 + float(data[2]) / (60 * 60)
-            if data[3] == 'W' or data[3] == 'S':
-                dd *= -1
-            return dd
-        except (ValueError, IndexError) as e:
-            print(f"Error convirtiendo DMS a DD: {e}")
-            return None
-
-    def get_image_pos_utm(self, data):
-        try:
-            # Obtiene las posiciones en el formato que sale con exiftools
-            if 'GPSLatitude' not in data or 'GPSLongitude' not in data:
-                raise ValueError("Datos GPS faltantes en metadata")
-                
-            lat = data['GPSLatitude'].replace('\'', '').replace('"', '').split(' ')
-            lng = data['GPSLongitude'].replace('\'', '').replace('"', '').split(' ')
-            
-            # Elimina la palabra 'deg' de los datos
-            for v in lat:
-                if v == 'deg':
-                    lat.pop(lat.index(v))
-            for v in lng:
-                if v == 'deg':
-                    lng.pop(lng.index(v))
-                    
-            # Calcula la posición en coordenadas UTM
-            lat_dd = self.dms2dd(lat)
-            lng_dd = self.dms2dd(lng)
-            
-            if lat_dd is None or lng_dd is None:
-                raise ValueError("Error en conversión de coordenadas")
-                
-            pos = utm.from_latlon(lat_dd, lng_dd)
-            return pos
-        except Exception as e:
-            print(f"Error obteniendo posición UTM: {e}")
-            return None
-
     def get_georef_matriz(self, data, desp_este=0, desp_norte=0, desp_yaw=0, offset_altura=0, modo_altura="relativo", dist=None, ans=None, sig=None):
         try:
             metadata = data
-            if metadata['Model'] == "MAVIC2-ENTERPRISE-ADVANCED":
-                img_height = int(data['ImageHeight'])
-                img_width = int(data['ImageWidth'])
-                tamano_pix = 0.000012
-                dis_focal = 9 / 1000  # mavic 2 enterprice
-                if data["GimbalYawDegree"] is not None:
-                    yaw = np.pi * (float(data["GimbalYawDegree"]) + float(desp_yaw)) / 180
-                else:
-                    yaw = 0
-                center = self.get_image_pos_utm(data)
-                if center is None:
-                    raise ValueError("No se pudo obtener la posición UTM")
-                if modo_altura == "relativo":
-                    #altura = float(data['RelativeAltitude']) - float(offset_altura)
-                    if float(data['RelativeAltitude']) < 3:
-                        relAltitude = 3
-                    else:
-                        relAltitude = float(data['RelativeAltitude'])
-                    altura = relAltitude - float(offset_altura)
-                else:
-                    altura = offset_altura
-                GSD = tamano_pix * (altura) / dis_focal
-                # Cálculo del desplazamiento debido al pitch de la cámara
-                pitch = np.pi * (float(data["GimbalPitchDegree"])) / 180.0
-                desp_pitch = altura * np.tan(-np.pi / 2 + pitch)
-            elif metadata['Model'] == "M3T":
-                img_height = int(data['ImageHeight'])
-                img_width = int(data['ImageWidth'])
-                tamano_pix = 0.000012
-                dis_focal = 9 / 1000  # mavic 2 enterprice
-                if data["GimbalYawDegree"] is not None:
-                    yaw = np.pi * (float(data["GimbalYawDegree"]) + float(desp_yaw)) / 180
-                else:
-                    yaw = 0
-                center = self.get_image_pos_utm(data)
-                if center is None:
-                    raise ValueError("No se pudo obtener la posición UTM")
-                if modo_altura == "relativo":
-                    if float(data['RelativeAltitude']) < 3:
-                        relAltitude = 3
-                    else:
-                        relAltitude = float(data['RelativeAltitude'])
-                    altura = relAltitude - float(offset_altura)
-                else:
-                    altura = offset_altura
-                GSD = tamano_pix * (altura) / dis_focal
-                # Cálculo del desplazamiento debido al pitch de la cámara
-                pitch = np.pi * (float(data["GimbalPitchDegree"])) / 180.0
-                desp_pitch = altura * np.tan(-np.pi / 2 + pitch)
-            elif metadata['Model'] == "XT2":
-                img_height = int(data['ImageHeight'])
-                img_width = int(data['ImageWidth'])
-                tamano_pix = 0.000012
-                dis_focal = 9 / 1000  # mavic 2 enterprice
-                if data["GimbalYawDegree"] is not None:
-                    yaw = np.pi * (float(data["GimbalYawDegree"]) + float(desp_yaw)) / 180
-                else:
-                    yaw = 0
-                center = self.get_image_pos_utm(data)
-                if center is None:
-                    raise ValueError("No se pudo obtener la posición UTM")
-                if modo_altura == "relativo":
-                    altura = float(data['RelativeAltitude']) - float(offset_altura)
-                else:
-                    altura = float(offset_altura)
-                GSD = tamano_pix * (altura) / dis_focal
-                # Cálculo del desplazamiento debido al pitch de la cámara
-                pitch = np.pi * (float(data["GimbalPitchDegree"])) / 180.0
-                desp_pitch = altura * np.tan(-np.pi / 2 + pitch)
-            elif metadata['Model'] == "ZH20T":
-                img_height = int(data['ImageHeight'])
-                img_width = int(data['ImageWidth'])
-                tamano_pix = 0.000012
-                dis_focal = float(data['FocalLength'][:-2]) / 1000
-                # yaw = np.pi * (float(data["FlightYawDegree"]) + desp_yaw) / 180
-                if data["GimbalYawDegree"] is not None:
-                    yaw = np.pi * (float(data["GimbalYawDegree"]) + float(desp_yaw)) / 180
-                else:
-                    yaw = 0
-                pitch = np.pi * (float(data["GimbalPitchDegree"])) / 180.0
-
-                try:
-                    distancia_laser = float(data["LRFTargetDistance"]) #if dist is not None else dist
-                    lat_laser = float(data["LRFTargetLat"])
-                    lon_laser = float(data["LRFTargetLon"])
-                    altura = distancia_laser * abs(np.sin(pitch))
-                    GSD = tamano_pix * altura / dis_focal
-                    if ans is not None and sig is not None:
-                        if float(sig["LRFTargetLat"]) < lat_laser < float(ans["LRFTargetLat"]):
-                            lon_laser += float(sig["LRFTargetLon"]) + float(ans["LRFTargetLon"])
-                            lon_laser /= 3
-                    usar_posicion_laser = False
-                    if usar_posicion_laser:
-                        center = utm.from_latlon(lat_laser, lon_laser)
-                        desp_pitch = 0
-                    else:
-                        center = self.get_image_pos_utm(data)
-                        if center is None:
-                            raise ValueError("No se pudo obtener la posición UTM")
-                        desp_pitch = altura * np.tan(-np.pi / 2 + pitch)
-
-                except Exception as e:
-                    print(f"Error con datos láser, usando GPS: {e}")
-                    center = self.get_image_pos_utm(data)
-                    if center is None:
-                        raise ValueError("No se pudo obtener la posición UTM")
-                    if modo_altura == "relativo":
-                        altura = float(data['RelativeAltitude']) - float(offset_altura)
-                    else:
-                        altura = float(offset_altura)
-                    GSD = tamano_pix * (altura) / dis_focal
-                    # Cálculo del desplazamiento debido al pitch de la cámara
-                    pitch = np.pi * (float(data["GimbalPitchDegree"])) / 180.0
-                    desp_pitch = altura * np.tan(-np.pi / 2 + pitch)
-            else:
-                print("===================================================")
-                print("CÁMARA NO DEFINIDA")
-                return None
-
+            
+            img_height, img_width, yaw, center, desp_pitch, GSD = CameraProcessor().get_camera_processor(metadata, desp_este, desp_norte, desp_yaw, offset_altura, modo_altura, dist, ans, sig)
+            
             mid_width = img_width / 2
 
             Matriz_y = np.zeros((img_height, img_width))
@@ -374,6 +218,7 @@ class GeoProcessor:
         """
         Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
         respecto al norte del lado más largo.
+        Sistema de coordenadas: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
         """
         lados = []
         n = len(puntos)
@@ -391,18 +236,29 @@ class GeoProcessor:
 
         x1, y1, _ = puntos[idx1]
         x2, y2, _ = puntos[idx2]
+        
+        # Asegurarse de que el punto 1 sea el mas hacia el norte y el punto 2 el mas hacia el sur
+        if y1 > y2:
+            x1, y1, _ = puntos[idx2]
+            x2, y2, _ = puntos[idx1]
+        
+        
+        pos_utm_start = utm.from_latlon(x1, y1)
+        pos_utm_end = utm.from_latlon(x2, y2)
 
-        # Calcular el ángulo respecto al norte (latitud positiva)
-        delta_x = x2 - x1
-        delta_y = y2 - y1
+        
+        # Calcular el angulo con respecto al norte
+        delta_x = pos_utm_end[0] - pos_utm_start[0]
+        delta_y = pos_utm_end[1] - pos_utm_start[1]
         angulo_rad = math.atan2(delta_x, delta_y)
         angulo_deg = math.degrees(angulo_rad)
         
-        # Asegúrate de que el ángulo esté entre 0 y 360
-        if angulo_deg < 0:
-            angulo_deg += 360
-            
-    
+        # Convertir al sistema de coordenadas deseado: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
+        # Si el ángulo está entre 270° y 360°, convertirlo a valores negativos
+        if angulo_deg > 270:
+            angulo_deg = angulo_deg - 360
+        
+        print(f"Angulo de tracker: {angulo_deg}")
 
         return angulo_deg
         
@@ -410,25 +266,30 @@ class GeoProcessor:
         """
         Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
         respecto al norte del lado más largo.
+        Sistema de coordenadas: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
         """      
         # quiero asegurarme de que siempre el x1 sea el mas hacia el norte y el x2 el mas hacia el sur
-        if puntos[0][1] < puntos[1][1]:
-            x1, y1 = puntos[1]
-            x2, y2 = puntos[0]
-        else:
-            x1, y1 = puntos[0]
-            x2, y2 = puntos[1]
+      
 
-
-        # Calcular el ángulo respecto al norte (latitud positiva)
-        delta_x = x2 - x1
-        delta_y = y2 - y1
+        pos_start = puntos[0]
+        pos_end = puntos[1]
+        
+        # Asegurarse de que el punto 1 sea el mas hacia el norte y el punto 2 el mas hacia el sur
+        if pos_start[1] > pos_end[1]:
+            pos_start, pos_end = pos_end, pos_start
+        
+        
+        delta_x = pos_end[0] - pos_start[0]
+        delta_y = pos_end[1] - pos_start[1]
         angulo_rad = math.atan2(delta_x, delta_y)
         angulo_deg = math.degrees(angulo_rad)
         
-        # Asegúrate de que el ángulo esté entre 0 y 360
-        if angulo_deg < 0:
-            angulo_deg += 360
+        
+        
+        # Convertir al sistema de coordenadas deseado: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
+        # Si el ángulo está entre 270° y 360°, convertirlo a valores negativos
+        if angulo_deg > 270:
+            angulo_deg = angulo_deg - 360
             
         print(f"Angulo de la linea: {angulo_deg}")
 

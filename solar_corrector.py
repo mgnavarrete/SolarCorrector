@@ -60,12 +60,18 @@ class SolarCorrector:
         
     def init_from_json(self):
         print(f"Cargando datos desde JSON")
-        with open(self.json_path, 'r') as f:
-            self.panels_data = json.load(f)
         
-        # Cargar la lista de vuelos desde JSON
-        with open(f"{self.path_PP}/list_flights.json", 'r') as f:
-            self.list_flights = json.load(f)
+        if os.path.exists(self.json_path):
+            with open(self.json_path, 'r') as f:
+                self.panels_data = json.load(f)
+            
+            # Cargar la lista de vuelos desde JSON
+            with open(f"{self.path_PP}/list_flights.json", 'r') as f:
+                self.list_flights = json.load(f)
+        
+        else:
+            print(f"No se encontró el archivo {self.json_path}")
+            return
                  
 
 
@@ -75,6 +81,11 @@ class SolarCorrector:
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
        
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_lines_path, var)
+        
+    def extract_all_metadata(self):
+        for image_path in tqdm(self.list_images, desc="Extrayendo metadatos"):
+            MetadataManager().extract_metadata(self.cvat_images_path + "/" + image_path, self.metadata_path + "/" + image_path[:-4] + '.txt')
+            #MetadataManager().extract_metadata(self.lines_images_path + "/" + image_path, self.metadata_lines_path + "/" + image_path[:-4] + '.txt')
         
     def save_geo_matrix(self):
         GeoProcessor().save_georef_matriz(self.list_images, self.metadata_path, self.geonp_path)
