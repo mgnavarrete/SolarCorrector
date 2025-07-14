@@ -111,6 +111,7 @@ class PolygonProcessor:
         mode_angles = np.array(angles_deg)[in_mode]
         mean_mode_angle = mode_angles.mean()
         mean_mode_angle_rad = np.radians(mean_mode_angle)
+        print(f"mean_mode_angle: {mean_mode_angle}")
         # Línea principal que cruza toda la imagen horizontalmente
         cx, cy = W // 2, H // 2
         # Usar el ancho completo de la imagen para que cruce horizontalmente
