@@ -9,7 +9,7 @@ if __name__ == "__main__":
     for folder in folders_list:
         SC = SolarCorrector(folder, cvat_images=False)
         SC.init_from_json()
-        # SC.reset_metadata(var='all')    
+        SC.reset_metadata(var='H')    
         # SC.findFlights(4, save_kml=False)
         # SC.get_seg_paneles(save_masks=True , save_kml=True)
         # SC.correct_yaw(save_images=True, save_kml=False)
