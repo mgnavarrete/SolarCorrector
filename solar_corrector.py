@@ -341,6 +341,9 @@ class SolarCorrector:
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
+        
+        with open(f"{self.path_PP}/list_flights.json", 'w') as f:
+            json.dump(self.list_flights, f)
 
         print(f"Paneles detectados: {len(self.panels_data)}")
         
