@@ -203,7 +203,7 @@ class SolarCorrector:
             json.dump(self.list_flights, f)
         
         
-    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 4500, save_kml: bool = False):
+    def get_seg_paneles(self, save_masks: bool = False, epsilon_factor: float = 0.015, area_min: float = 5000, save_kml: bool = False):
         print(f"Detectando paneles en {self.path_PP}")
         
         if self.list_flights == []:
@@ -305,19 +305,21 @@ class SolarCorrector:
                                             x2, y2 = points_ordered[1]
                                             x3, y3 = points_ordered[2]
                                             x4, y4 = points_ordered[3]
-                                                                                                                     
-                                            polygons_list.append([(int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)), (int(x4), int(y4))])
                                             
-                                            if save_masks:
-                                                try:
-                                                    if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
-                                                        draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
-                                                    else:
-                                                        draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
-                                                        
-                                                    cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
-                                                except Exception as e:
-                                                    print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
+                                            area = ImageHandler().get_area_polygon(points_ordered)
+                                            if area > area_min:                                                             
+                                                polygons_list.append([(int(x1), int(y1)), (int(x2), int(y2)), (int(x3), int(y3)), (int(x4), int(y4))])
+                                            
+                                                if save_masks:
+                                                    try:
+                                                        if not os.path.exists(f"{self.segmented_images_path}/{image_path}"):
+                                                            draw_image = ImageHandler().draw_segmented_image(self.cvat_images_path, image_path, points_ordered)
+                                                        else:
+                                                            draw_image = ImageHandler().draw_segmented_image(self.segmented_images_path, image_path, points_ordered)
+                                                            
+                                                        cv2.imwrite(f"{self.segmented_images_path}/{image_path}", draw_image)
+                                                    except Exception as e:
+                                                        print(f"Error al guardar la imagen segmentada para {image_path}: {e}")
                                             
                                     
                                 except Exception as e:
