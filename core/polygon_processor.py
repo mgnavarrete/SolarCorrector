@@ -340,7 +340,7 @@ class PolygonProcessor:
         in_mode = (width_polygons >= bin_edges[max_bin]) & (width_polygons < bin_edges[max_bin+1])
         width_mode = np.array(width_polygons)[in_mode]
         width_mode = width_mode.mean()
-        print(f"width_mode: {width_mode}")
+ 
         
         
         

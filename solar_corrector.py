@@ -336,7 +336,7 @@ class SolarCorrector:
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
-            if len(new_flight) != 0:
+            if len(new_flight) > 1:
                 new_list_flights.append(new_flight)
             
         self.list_flights = new_list_flights
@@ -412,15 +412,14 @@ class SolarCorrector:
         if self.list_flights == []:
             self.init_from_json()  
             
-        width_tracker = GeoProcessor().get_width_polygon(polygon_tracker)
-        print(f"width_tracker: {width_tracker}")   
+        width_tracker = GeoProcessor().get_width_polygon(polygon_tracker) 
         for flight in tqdm(self.list_flights, desc="Calculando H de las lineas"):
             for e, image_path in enumerate(flight):
                 
                 metadata = MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt")
                 
                 desp_H = PolygonProcessor().get_desp_H_image(self.panels_data[image_path]["polygons"], width_tracker, metadata)
-                print(f"desp_H: {desp_H}")
+               
                 MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_H', desp_H)
                 MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_H', desp_H)
            

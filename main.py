@@ -9,11 +9,11 @@ if __name__ == "__main__":
     for folder in folders_list:
         SC = SolarCorrector(folder, cvat_images=False)
         SC.init_from_json()
-        SC.reset_metadata(var='H')    
-        # SC.findFlights(4, save_kml=False)
-        # SC.get_seg_paneles(save_masks=True , save_kml=True)
-        # SC.correct_yaw(save_images=True, save_kml=False)
-        # SC.correct_E(save_images=False, save_kml=True)
+        SC.reset_metadata(var='all')    
+        # SC.findFlights(min_line=4, save_kml=False)
+        # SC.get_seg_paneles(save_masks=False , save_kml=True)
+        SC.correct_yaw(save_images=False, save_kml=False)
+        SC.correct_E(save_images=False, save_kml=False)
       
         polygon_MZN = [(-70.7951126851,-33.0957588996,0),
                        (-70.7950894205,-33.0957592347,0),
@@ -27,4 +27,4 @@ if __name__ == "__main__":
                        (-70.3120564527,-25.1114901421,0),
                        (-70.3120910591,-25.1114898359,0)]
         
-        SC.correct_H(polygon_tracker=polygon_LLK, save_kml=True)
+        SC.correct_H(polygon_tracker=polygon_MZN, save_kml=True)
