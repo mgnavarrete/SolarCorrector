@@ -80,7 +80,8 @@ class SolarCorrector:
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
        
-        MetadataManager().reset_all_metadata(self.list_flights, self.metadata_lines_path, var)
+        for flight in self.list_flights:
+            MetadataManager().reset_all_metadata(flight, self.metadata_lines_path, var)
         
     def extract_all_metadata(self):
         for image_path in tqdm(self.list_images, desc="Extrayendo metadatos"):
