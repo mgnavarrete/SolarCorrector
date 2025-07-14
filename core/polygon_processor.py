@@ -312,4 +312,46 @@ class PolygonProcessor:
 
                 
         
+    def get_desp_H_image(self, polygons, width_tracker, metadata):
+        
+        width_polygons = []
+        for polygon in polygons:
+            x1, y1 = polygon[0]
+            x2, y2 = polygon[1]
+            x3, y3 = polygon[2]
+            x4, y4 = polygon[3]
+            
+            geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], 
+                                                    metadata['offset_N_tot'], metadata['offset_yaw'], 
+                                                    metadata['offset_altura'], metadata['modo_altura'])
+            
+            x1_utm, y1_utm = geo_data[y1][x1][0], geo_data[y1][x1][1]
+            x2_utm, y2_utm = geo_data[y2][x2][0], geo_data[y2][x2][1]
+            x3_utm, y3_utm = geo_data[y3][x3][0], geo_data[y3][x3][1]
+            x4_utm, y4_utm = geo_data[y4][x4][0], geo_data[y4][x4][1]
+            
+            # calcular el ancho del poligono
+            width = np.linalg.norm(np.array([x1_utm, y1_utm]) - np.array([x2_utm, y2_utm]))
+            width_polygons.append(width)
+            
+        # Sacar moda por histograma
+        hist, bin_edges = np.histogram(width_polygons, bins=36, range=(0, 50))
+        max_bin = np.argmax(hist)
+        in_mode = (width_polygons >= bin_edges[max_bin]) & (width_polygons < bin_edges[max_bin+1])
+        width_mode = np.array(width_polygons)[in_mode]
+        width_mode = width_mode.mean()
+        print(f"width_mode: {width_mode}")
+        
+        
+        
+        # calcular el desplazamiento de N
+        desp_N = width_tracker - width_mode
+        
+        return desp_N
+            
+            
+            
+            
+            
+        
         

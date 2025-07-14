@@ -261,7 +261,32 @@ class GeoProcessor:
         print(f"Angulo de tracker: {angulo_deg}")
 
         return angulo_deg
+    
+    def get_width_polygon(self, polygon):
         
+        """
+        Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 
+        respecto al norte del lado más largo.
+        Sistema de coordenadas: 0°=Norte, 90°=Este, 180°=Sur, 270°=Oeste
+        """
+        lados = []
+        n = len(polygon)
+        
+        for i in range(n - 1):
+            lat1, lon1, _ = polygon[i]
+            lat2, lon2, _ = polygon[i+1]
+            # Distancia euclidiana (aproximación para distancias cortas)
+            pos_utm_start = utm.from_latlon(lat1, lon1)
+            pos_utm_end = utm.from_latlon(lat2, lon2)
+            distancia = math.sqrt((pos_utm_end[0] - pos_utm_start[0]) ** 2 + (pos_utm_end[1] - pos_utm_start[1]) ** 2)
+            lados.append((distancia, i, i+1))
+        
+        # Encuentra el lado más largo
+        lado_mas_corto = min(lados, key=lambda l: l[0])
+        width, idx1, idx2 = lado_mas_corto
+
+        return width
+    
     def get_angle_line(self, puntos):
         """
         Recibe una lista de puntos [(lon, lat, z), ...] y retorna el ángulo en grados 

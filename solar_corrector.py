@@ -407,5 +407,25 @@ class SolarCorrector:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="E")
  
 
-
+    def correct_H(self, polygon_tracker, save_kml: bool = False):
+        
+        if self.list_flights == []:
+            self.init_from_json()  
             
+        width_tracker = GeoProcessor().get_width_polygon(polygon_tracker)
+        print(f"width_tracker: {width_tracker}")   
+        for flight in tqdm(self.list_flights, desc="Calculando H de las lineas"):
+            for e, image_path in enumerate(flight):
+                
+                metadata = MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt")
+                
+                desp_H = PolygonProcessor().get_desp_H_image(self.panels_data[image_path]["polygons"], width_tracker, metadata)
+                print(f"desp_H: {desp_H}")
+                MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_H', desp_H)
+                MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_H', desp_H)
+           
+        if save_kml:
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="H_line")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="H")
+        
+                    
