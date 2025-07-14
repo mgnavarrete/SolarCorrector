@@ -209,7 +209,10 @@ class SolarCorrector:
         if self.list_flights == []:
             print("No hay vuelos para procesar")
             return
-        for flight in tqdm(self.list_flights, desc="Detectando paneles"):
+        
+        new_list_flights = []
+        for e, flight in tqdm(enumerate(self.list_flights), desc="Detectando paneles", total=len(self.list_flights)):
+            new_flight = flight.copy()
             for image_path in flight:
                 try:
                     # Cargar datos de la imagen con control de errores
@@ -241,6 +244,7 @@ class SolarCorrector:
                         continue
 
                     polygons_list = []
+                     
       
                     for result in results:
                         if result.masks is not None:
@@ -319,12 +323,21 @@ class SolarCorrector:
                                 except Exception as e:
                                     print(f"Error procesando la máscara {j} de {image_path}: {e}")
                                     continue
-                    self.panels_data[image_path]["polygons"] = polygons_list
-                
+                                
+                    if len(polygons_list) != 0:
+                        
+                        self.panels_data[image_path]["polygons"] = polygons_list
                     
+                    else: 
+                        new_flight.remove(image_path)
+
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
+            if len(new_flight) != 0:
+                new_list_flights.append(new_flight)
+            
+        self.list_flights = new_list_flights
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
