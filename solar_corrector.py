@@ -80,7 +80,7 @@ class SolarCorrector:
     def reset_metadata(self, var: str = 'all'):
         MetadataManager().reset_all_metadata(self.list_images, self.metadata_path, var)
        
-        MetadataManager().reset_all_metadata(self.list_images, self.metadata_lines_path, var)
+        MetadataManager().reset_all_metadata(self.list_flights, self.metadata_lines_path, var)
         
     def extract_all_metadata(self):
         for image_path in tqdm(self.list_images, desc="Extrayendo metadatos"):
@@ -330,12 +330,35 @@ class SolarCorrector:
 
         print(f"Paneles detectados: {len(self.panels_data)}")
         
-        
-    def correct_yaw_img(self, save_images: bool = False, puntos: list = None):
-        
+                
+    def correct_yaw(self, save_images: bool = False, save_kml: bool = False):
         if self.list_flights == []:
             self.init_from_json()         
-        for flight in tqdm(self.list_flights, desc="Calculando desplazamientos de las lineas"):
+            
+        for flight in tqdm(self.list_flights, desc="Calculando yaw de las lineas"):
+            for e, image_path in enumerate(flight):
+        
+                    start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
+                                                                                self.cvat_images_path, image_path, 
+                                                                                self.panels_data, save_images)
+            
+                    desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, start_point, end_point, 
+                                                                     MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt"))
+                    
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+           
+        if save_kml:
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
+        
+        
+    def correct_E(self, save_images: bool = False, save_kml: bool = False):
+        
+        if self.list_flights == []:
+            self.init_from_json()      
+               
+        for flight in tqdm(self.list_flights, desc="Calculando E de las lineas"):
             for e, image_path in enumerate(flight):
                 if e+1 < len(flight):
                     
@@ -349,46 +372,20 @@ class SolarCorrector:
                                                                                           self.cvat_images_path, next_image_path, 
                                                                                           self.panels_data, save_images)
                         
-                    desp_yaw = PolygonProcessor().get_desp_line_yaw([start_point, end_point, start_point_next, end_point_next], 
-                                                                       [MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt"),
-                                                                        MetadataManager().get_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt")])
                     
-                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+                    desp_E = PolygonProcessor().get_desp_E_image([start_point, end_point], [start_point_next, end_point_next], 
+                                                                 [MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt"),
+                                                                  MetadataManager().get_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt")])
                     
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
+                    print(f"Desp E: {desp_E}")
+                    
+                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_E)
+                    
+                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_E', desp_E)
            
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
-                
-    def correct_yaw(self, save_images: bool = False):
-        if self.list_flights == []:
-            self.init_from_json()         
-            
-        for flight in tqdm(self.list_flights, desc="Calculando desplazamientos de las lineas"):
-            for e, image_path in enumerate(flight):
-        
-                    start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
-                                                                                self.cvat_images_path, image_path, 
-                                                                                self.panels_data, save_images)
-            
-                    desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, start_point, end_point, 
-                                                                     MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt"))
-                    
-                    MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
-                    MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt", 'offset_yaw', desp_yaw)
-           
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
-        GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
-        
-        
-        
-        
-        
-        
-        
-    def correct_H(self):
-        pass
-
+        if save_kml:
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="E_line")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="E")
  
 
 

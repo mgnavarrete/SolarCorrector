@@ -192,7 +192,7 @@ class PolygonProcessor:
         x1, y1 = start_point
         x2, y2 = end_point
         
-        print(f"Puntos: {start_point}, {end_point}")
+     
         
         # sacar pendiente de la linea
         slope = (y2 - y1) / (x2 - x1)
@@ -220,3 +220,51 @@ class PolygonProcessor:
 
         return delta_yaw
  
+    def get_desp_E_image(self, points_image, points_next_image, metadatas):
+        
+        x1, y1 = points_image[0]
+        x2, y2 = points_image[1]
+        x1_next, y1_next = points_next_image[0]
+        x2_next, y2_next = points_next_image[1]
+        
+        metadata = metadatas[0]
+        metadata_next = metadatas[1]
+        
+        
+        geo_data = GeoProcessor().get_georef_matriz(metadata, metadata['offset_E_tot'], 
+                                                    metadata['offset_N_tot'], metadata['offset_yaw'], 
+                                                    metadata['offset_altura'], metadata['modo_altura'])
+        geo_data_next = GeoProcessor().get_georef_matriz(metadata_next, metadata_next['offset_E_tot'], 
+                                                    metadata_next['offset_N_tot'], metadata_next['offset_yaw'], 
+                                                    metadata_next['offset_altura'], metadata_next['modo_altura'])
+                    
+        pos_start = np.array(geo_data[y1][x1])          # [E, N, ...]
+        pos_end = np.array(geo_data[y2][x2])
+        pos_start_next = np.array(geo_data_next[y1_next][x1_next])
+        pos_end_next = np.array(geo_data_next[y2_next][x2_next])
+        
+        x1_utm, y1_utm = pos_start[0], pos_start[1]
+        x2_utm, y2_utm = pos_end[0], pos_end[1]
+        x1_next_utm, y1_next_utm = pos_start_next[0], pos_start_next[1]
+        x2_next_utm, y2_next_utm = pos_end_next[0], pos_end_next[1]
+        
+        
+        # Pendiente de la recta original
+        if x2_utm == x1_utm:
+            desp_E = x1_utm - x1_next_utm
+            return desp_E
+
+        m = (y2_utm - y1_utm) / (x2_utm - x1_utm)
+        
+
+        # Hallar la X sobre la recta original con la misma Y que el punto inicial next
+        x_sobre_recta = x1_utm + (y1_next_utm - y1_utm) / m
+
+        desp_E = x_sobre_recta - x1_next_utm
+
+        return desp_E
+        
+
+                
+        
+        

@@ -288,9 +288,9 @@ class GeoProcessor:
         # Si el ángulo está entre 270° y 360°, convertirlo a valores negativos
         if angulo_deg > 270:
             angulo_deg = angulo_deg - 360
-            
-        print(f"Angulo de la linea: {angulo_deg}")
+        
 
         return angulo_deg        
     
+
     
