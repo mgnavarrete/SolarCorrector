@@ -5,6 +5,38 @@ from core.image_processor import ImageHandler
 
 class PolygonProcessor:
     
+    def _validate_points_in_image(self, start_point, end_point, W, H):
+        """
+        Valida que los puntos estén dentro de los límites de la imagen
+        y los ajusta si es necesario
+        """
+        x1, y1 = start_point
+        x2, y2 = end_point
+        
+        # Validar y ajustar coordenadas X
+        if x1 < 0:
+            x1 = 0
+        elif x1 >= W:
+            x1 = W - 1
+            
+        if x2 < 0:
+            x2 = 0
+        elif x2 >= W:
+            x2 = W - 1
+            
+        # Validar y ajustar coordenadas Y
+        if y1 < 0:
+            y1 = 0
+        elif y1 >= H:
+            y1 = H - 1
+            
+        if y2 < 0:
+            y2 = 0
+        elif y2 >= H:
+            y2 = H - 1
+        
+        return (x1, y1), (x2, y2)
+    
     def rotate_point(self, pt, centro, ang):
         c, s = np.cos(ang), np.sin(ang)
         R = np.array([[c, -s], [s, c]])
@@ -85,6 +117,10 @@ class PolygonProcessor:
         dy = np.sin(mean_mode_angle_rad) * L / 2
         start_point = (int(cx - dx), int(cy - dy))
         end_point = (int(cx + dx), int(cy + dy))
+        
+        # Validar que los puntos estén dentro de los límites de la imagen
+        start_point, end_point = self._validate_points_in_image(start_point, end_point, W, H)
+        
         return mean_mode_angle_rad, start_point, end_point
 
     def get_main_direction_horizontal(self, polygons, W, H):
@@ -124,14 +160,12 @@ class PolygonProcessor:
      
         
         
-        # Hacer que siempre el putno a la mas derecha de la imagen sea el end_point
+        # Hacer que siempre el punto a la mas derecha de la imagen sea el end_point
         if start_point[0] > end_point[0]:
             start_point, end_point = end_point, start_point
             
-        if start_point[0] < 0 :
-            start_point = (0, start_point[1])
-        if end_point[0] > W - 1:
-            end_point = (W - 1, end_point[1])
+        # Validar que ambos puntos estén dentro de los límites de la imagen
+        start_point, end_point = self._validate_points_in_image(start_point, end_point, W, H)
         
         return start_point, end_point
     
@@ -181,6 +215,13 @@ class PolygonProcessor:
         
    
         start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
+        
+        # Validar que los puntos estén dentro de los límites de la imagen
+        start_point, end_point = self._validate_points_in_image(start_point, end_point, W, H)
+        
+        x1, y1 = start_point
+        x2, y2 = end_point
+
                     
         if save_images:
             data_image_copy = ImageHandler().draw_center_line(save_path, image_path, start_point, end_point)
