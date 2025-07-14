@@ -376,9 +376,7 @@ class SolarCorrector:
                     desp_E = PolygonProcessor().get_desp_E_image([start_point, end_point], [start_point_next, end_point_next], 
                                                                  [MetadataManager().get_metadata(f"{self.metadata_lines_path}/{image_path[:-4]}.txt"),
                                                                   MetadataManager().get_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt")])
-                    
-                    print(f"Desp E: {desp_E}")
-                    
+                                        
                     MetadataManager().adjust_metadata(f"{self.metadata_lines_path}/{next_image_path[:-4]}.txt", 'offset_E', desp_E)
                     
                     MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_E', desp_E)
