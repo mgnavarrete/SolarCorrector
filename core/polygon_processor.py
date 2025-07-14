@@ -178,6 +178,7 @@ class PolygonProcessor:
    
         
         polygons_image = panels_data[image_path]["polygons"]
+        print(f"polygons_image: {image_path}")
    
         start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
                     
