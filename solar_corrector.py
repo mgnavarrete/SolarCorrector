@@ -193,7 +193,7 @@ class SolarCorrector:
         self.list_flights = new_flights
         
         if save_kml:
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.original_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
         
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
@@ -336,8 +336,7 @@ class SolarCorrector:
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
-            # if len(new_flight) > 1:
-            #     new_list_flights.append(new_flight)
+
             
         self.list_flights = new_list_flights
         
@@ -371,7 +370,7 @@ class SolarCorrector:
            
         if save_kml:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="Y_line")
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Y")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.original_images_path, self.metadata_lines_path, self.list_flights, name="Y")
         
         
     def correct_E(self, save_images: bool = False, save_kml: bool = False):
@@ -403,8 +402,8 @@ class SolarCorrector:
                     MetadataManager().adjust_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt", 'offset_E', desp_E)
            
         if save_kml:
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="E_line")
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="E")
+            # GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="E_line")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.original_images_path, self.metadata_lines_path, self.list_flights, name="Corrected")
  
 
     def correct_H(self, polygon_tracker, save_kml: bool = False):
@@ -425,6 +424,6 @@ class SolarCorrector:
            
         if save_kml:
             GeoProcessor().save_kml_vuelos(self.path_PP, self.segmented_images_path, self.metadata_lines_path, self.list_flights, name="H_line")
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="H")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.original_images_path, self.metadata_lines_path, self.list_flights, name="H")
         
                     
