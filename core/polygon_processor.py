@@ -158,6 +158,7 @@ class PolygonProcessor:
             start_point = (int(cx - dx), int(cy - dy))
             end_point = (int(cx + dx) - 1, int(cy + dy))
         except:
+            print(f"Polygons: {polygons}")
             print(f"Error al calcular la linea horizontal: {mean_mode_angle_rad}")
             print(f"cx: {cx}, cy: {cy}, dx: {dx}, dy: {dy}")
             return None, None
