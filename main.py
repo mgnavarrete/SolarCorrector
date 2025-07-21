@@ -11,8 +11,8 @@ if __name__ == "__main__":
         # SC.init_from_json()
         SC.reset_metadata(var='all')    
         SC.findFlights(min_line=0, save_kml=True)
-        SC.get_seg_paneles(save_masks=False , save_kml=False)
-        SC.correct_yaw(save_images=False, save_kml=False)
+        SC.get_seg_paneles(save_masks=True , save_kml=False)
+        SC.correct_yaw(save_images=True, save_kml=False)
         SC.correct_E(save_images=False, save_kml=True)
       
         polygon_MZN = [(-70.7951126851,-33.0957588996,0),
