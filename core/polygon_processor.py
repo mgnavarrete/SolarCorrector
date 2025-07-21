@@ -154,10 +154,13 @@ class PolygonProcessor:
         L = W
         dx = np.cos(mean_mode_angle_rad) * L / 2
         dy = np.sin(mean_mode_angle_rad) * L / 2
-        start_point = (int(cx - dx), int(cy - dy))
-        end_point = (int(cx + dx) - 1, int(cy + dy))
-        
-     
+        try:
+            start_point = (int(cx - dx), int(cy - dy))
+            end_point = (int(cx + dx) - 1, int(cy + dy))
+        except:
+            print(f"Error al calcular la linea horizontal: {mean_mode_angle_rad}")
+            print(f"cx: {cx}, cy: {cy}, dx: {dx}, dy: {dy}")
+            return None, None
         
         
         # Hacer que siempre el punto a la mas derecha de la imagen sea el end_point
