@@ -359,6 +359,10 @@ class SolarCorrector:
                     start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
                                                                                 self.cvat_images_path, image_path, 
                                                                                 self.panels_data, save_images)
+                    if start_point is None or end_point is None:
+                        start_point, end_point = PolygonProcessor().get_middle_line(self.segmented_images_path, 
+                                                                                self.cvat_images_path, flight[e-1], 
+                                                                                self.panels_data, save_images)
             
                     desp_yaw = PolygonProcessor().get_desp_yaw_image(self.transformer, start_point, end_point, 
                                                                      MetadataManager().get_metadata(f"{self.metadata_path}/{image_path[:-4]}.txt"))

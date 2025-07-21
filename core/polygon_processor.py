@@ -216,8 +216,10 @@ class PolygonProcessor:
    
         
         polygons_image = panels_data[image_path]["polygons"]
+        if len(polygons_image) == 0:
+            print(f"No hay poligonos en la imagen: {image_path}")
+            return None, None
         
-   
         start_point, end_point = PolygonProcessor().get_main_direction_horizontal(polygons_image, W, H)
         
         # Validar que los puntos estén dentro de los límites de la imagen
