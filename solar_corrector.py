@@ -91,7 +91,7 @@ class SolarCorrector:
     def save_geo_matrix(self):
         GeoProcessor().save_georef_matriz(self.list_images, self.metadata_path, self.geonp_path)
         
-    def findFlights(self, min_line: int = 4, save_kml: bool = False):
+    def findFlights(self, min_line: int = 3, save_kml: bool = False):
                 
         print(f"Buscando vuelos en {self.path_PP}")
         
