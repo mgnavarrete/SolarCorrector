@@ -349,7 +349,7 @@ class SolarCorrector:
 
         print(f"Paneles detectados: {len(self.panels_data)}")
         if save_kml:
-            GeoProcessor().save_kml_vuelos(self.path_PP, self.lines_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
+            GeoProcessor().save_kml_vuelos(self.path_PP, self.original_images_path, self.metadata_lines_path, self.list_flights, name="Flights")
         
                 
     def correct_yaw(self, save_images: bool = False, save_kml: bool = False):
