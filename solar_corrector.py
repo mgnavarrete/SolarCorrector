@@ -390,9 +390,17 @@ class SolarCorrector:
                                                                                 self.cvat_images_path, image_path, 
                                                                                 self.panels_data, save_images)
                     
+                    if start_point is None or end_point is None:
+                        print(f"No se pudo calcular la linea horizontal para la imagen: {image_path}")
+                        continue
+                    
                     start_point_next, end_point_next = PolygonProcessor().get_middle_line(self.segmented_images_path,
                                                                                           self.cvat_images_path, next_image_path, 
                                                                                           self.panels_data, save_images)
+                    
+                    if start_point_next is None or end_point_next is None:
+                        print(f"No se pudo calcular la linea horizontal para la imagen: {next_image_path}")
+                        continue
                         
                     
                     desp_E = PolygonProcessor().get_desp_E_image([start_point, end_point], [start_point_next, end_point_next], 
