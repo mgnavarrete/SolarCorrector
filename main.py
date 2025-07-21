@@ -10,7 +10,7 @@ if __name__ == "__main__":
         SC = SolarCorrector(folder, cvat_images=False)
         # SC.init_from_json()
         SC.reset_metadata(var='all')    
-        SC.findFlights(min_line=4, save_kml=False)
+        SC.findFlights(min_line=2, save_kml=True)
         SC.get_seg_paneles(save_masks=False , save_kml=True)
         SC.correct_yaw(save_images=False, save_kml=False)
         SC.correct_E(save_images=False, save_kml=True)
