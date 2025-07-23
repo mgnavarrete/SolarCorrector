@@ -336,8 +336,8 @@ class SolarCorrector:
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
+     
 
-        
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
         
