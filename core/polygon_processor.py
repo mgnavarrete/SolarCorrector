@@ -236,9 +236,9 @@ class PolygonProcessor:
         
         return start_point, end_point
     
-    def get_desp_yaw_image(self, transformer, start_point, end_point, metadata):
+    def get_desp_yaw_image(self, transformer, start_point, end_point, metadata, angle_yaw=0):
         
-        angle_yaw = 0
+       
         
         x1, y1 = start_point
         x2, y2 = end_point
