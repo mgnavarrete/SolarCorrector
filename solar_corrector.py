@@ -336,7 +336,11 @@ class SolarCorrector:
                 except Exception as e:
                     print(f"Error general procesando la imagen {image_path}: {e}")
                     continue
-     
+            
+            if len(new_flight) != 0:
+                new_list_flights.append(new_flight)
+                
+        self.list_flights = new_list_flights
 
         with open(self.json_path, 'w') as f:
             json.dump(self.panels_data, f)
